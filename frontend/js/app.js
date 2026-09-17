@@ -179,14 +179,41 @@ const app = {
   },
 
   async _browserOEmbed(url, source) {
+    const CF_WORKER = "https://packetproxy.packet-proxy.workers.dev";
+
+    // Build the target URL for the worker
+    const workerUrl = `${CF_WORKER}?url=${encodeURIComponent(url)}`;
+
+    try {
+      const resp = await fetch(workerUrl, { signal: _signal(7000) });
+      if (resp.ok) {
+        const data = await resp.json();
+        
+        // Use the suggested_name directly from the worker
+        if (data.suggested_name) {
+          // Pre-fill the address if we found location info
+          if (data.location_lines && data.location_lines.length > 0) {
+            document.getElementById("add-address").value = data.location_lines[0];
+          }
+          return data.suggested_name;
+        }
+        
+        // Fallback: extract from caption
+        if (data.caption) {
+          const name = _extractName(data.caption);
+          if (name) return name;
+        }
+      }
+    } catch (e) {
+      // Worker failed, try CORS proxies as fallback
+    }
+
+    // Fallback: try CORS proxies
     const oembedUrl = source === "instagram"
       ? `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`
       : `https://threads.net/oembed?url=${encodeURIComponent(url)}`;
 
-    const CF_WORKER = "https://packetproxy.packet-proxy.workers.dev";
-
     const proxies = [
-      `${CF_WORKER}?url=${encodeURIComponent(oembedUrl)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(oembedUrl)}`,
       `https://corsproxy.io/?${encodeURIComponent(oembedUrl)}`,
     ];
