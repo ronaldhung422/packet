@@ -138,27 +138,79 @@ const app = {
       return;
     }
 
-    document.getElementById("parse-result").innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text3);font-size:12px;">解析中，稍等...</p>';
+    document.getElementById("parse-result").innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text3);font-size:12px;">解析中...</p>';
 
-    // Step 1: Try backend parse (detects source)
-    const data = await API.parseLink(url);
+    // Step 1: Quick backend detect (source type) with Safari-safe timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    // If backend got a name, use it
+    let data;
+    try {
+      const resp = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: controller.signal,
+      });
+      data = await resp.json();
+    } catch (e) {
+      this._showParseFallback(url);
+      return;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
     if (data.suggested_name) {
       this._fillParsedData(data, url);
       return;
     }
 
-    // Step 2: If backend says try_browser, fetch oEmbed from browser directly
+    // Step 2: Try browser-side oEmbed (fast, 2 CORS proxies in parallel)
     if (data.parse_error === "try_browser" && data.source) {
-      const browserResult = await this._browserOEmbed(url, data.source);
-      if (browserResult) {
-        this._fillParsedData(browserResult, url);
+      const name = await this._browserOEmbed(url, data.source);
+      if (name) {
+        this._fillParsedData({ suggested_name: name, source: data.source, image_url: "" }, url);
         return;
       }
     }
 
-    // Step 3: Everything failed — store link, user types name
+    // Step 3: Failed
+    this._showParseFallback(url);
+  },
+
+  async _browserOEmbed(url, source) {
+    const oembedUrl = source === "instagram"
+      ? `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`
+      : `https://threads.net/oembed?url=${encodeURIComponent(url)}`;
+
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(oembedUrl)}`,
+      `https://corsproxy.io/?${encodeURIComponent(oembedUrl)}`,
+    ];
+
+    const results = await Promise.race([
+      Promise.allSettled(
+        proxies.map(proxyUrl =>
+          fetch(proxyUrl, { signal: _signal(5000) })
+            .then(r => r.ok ? r.text() : null)
+            .then(text => text ? _parseJson(text) : null)
+        )
+      ),
+      _delay(7000).then(() => null),
+    ]);
+
+    if (!results) return "";
+
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) {
+        const name = _extractName(r.value.title || r.value.author_name || "");
+        if (name) return name;
+      }
+    }
+    return "";
+  },
+
+  _showParseFallback(url) {
     document.getElementById("parse-result").innerHTML = `
       <div class="parse-result">
         <span style="color:var(--accent);">⚠️ 無法自動偵測餐廳名</span>
@@ -166,132 +218,6 @@ const app = {
       </div>
     `;
     document.getElementById("add-url-store").value = url;
-  },
-
-  async _browserOEmbed(url, source) {
-    // Try Instagram/Threads oEmbed directly from the browser
-    const oembedUrl = source === "instagram"
-      ? `https://api.instagram.com/oembed?url=${encodeURI(url)}`
-      : `https://threads.net/oembed?url=${encodeURI(url)}`;
-
-    // Try direct fetch first (works when CORS allows it)
-    try {
-      const resp = await fetch(oembedUrl, { signal: AbortSignal.timeout(5000) });
-      if (resp.ok) {
-        const json = await resp.json();
-        return this._oembedToResult(json, source);
-      }
-    } catch (e) {
-      // CORS blocked, try via CORS proxy
-    }
-
-    // Try via public CORS proxy (free, no signup)
-    const proxies = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(oembedUrl)}`,
-      `https://corsproxy.io/?${encodeURIComponent(oembedUrl)}`,
-    ];
-
-    for (const proxyUrl of proxies) {
-      try {
-        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
-        if (resp.ok) {
-          const text = await resp.text();
-          try {
-            const json = JSON.parse(text);
-            return this._oembedToResult(json, source);
-          } catch (e) { /* not JSON */ }
-          // If not JSON, try to extract from text
-          const name = this._extractNameFromHtml(text);
-          if (name) {
-            return { suggested_name: name, source, image_url: "" };
-          }
-        }
-      } catch (e) { /* proxy failed, try next */ }
-    }
-
-    // Last try: Instagram embed page
-    if (source === "instagram") {
-      const postId = url.match(/instagram\.com\/p\/([^\/\?]+)/);
-      if (postId) {
-        const embedUrl = `https://www.instagram.com/p/${postId[1]}/embed/`;
-        try {
-          const resp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(embedUrl)}`, {
-            signal: AbortSignal.timeout(6000)
-          });
-          if (resp.ok) {
-            const html = await resp.text();
-            const name = this._extractNameFromHtml(html);
-            if (name) {
-              return { suggested_name: name, source, image_url: "" };
-            }
-          }
-        } catch (e) {}
-      }
-    }
-
-    return null;
-  },
-
-  _oembedToResult(json, source) {
-    const title = json.title || "";
-    // Try to extract name from title using heuristics
-    const name = this._extractNameFromCaption(title);
-    return {
-      suggested_name: name || "",
-      source,
-      image_url: json.thumbnail_url || "",
-      description: json.description || json.author_name || "",
-    };
-  },
-
-  _extractNameFromCaption(caption) {
-    if (!caption) return "";
-
-    // Strategy 1: 📍 or at pattern
-    const patterns = [
-      /[📍📌🏠🏪]\s*([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/,
-      /(?:at|喺|@)\s+([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/i,
-    ];
-    for (const p of patterns) {
-      const m = caption.match(p);
-      if (m) {
-        let name = m[1].trim().replace(/[,\.\s\-]+$/g, "").trim();
-        if (name.length >= 2 && name.length <= 40 && !name.startsWith("@")) {
-          return name;
-        }
-      }
-    }
-
-    // Strategy 2: First meaningful line
-    const lines = caption.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length > 0) {
-      const first = lines[0];
-      if (first.length >= 2 && first.length <= 40 &&
-          !first.toLowerCase().startsWith("by ") && !first.startsWith("@")) {
-        return first;
-      }
-    }
-
-    return "";
-  },
-
-  _extractNameFromHtml(html) {
-    // Try to find restaurant name in embed HTML
-    const patterns = [
-      /<meta\s+property="og:title"\s+content="([^"]+)"/i,
-      /<title>([^<]+)<\/title>/i,
-      /"caption":"([^"]+)"/,
-    ];
-    for (const p of patterns) {
-      const m = html.match(p);
-      if (m) {
-        const cleaned = m[1].replace(/\\u[0-9a-f]{4}/g, "").trim();
-        if (cleaned.length >= 2 && cleaned.length < 60) {
-          return this._extractNameFromCaption(cleaned);
-        }
-      }
-    }
-    return "";
   },
 
   _fillParsedData(data, url) {
@@ -462,7 +388,7 @@ const app = {
     await API.addMemory(placeId, text);
     input.value = "";
     this.toast("💭 回憶已儲存！");
-    this.viewPlace(placeId); // Refresh
+    this.viewPlace(placeId);
   },
 
   async deleteMemory(placeId, memoryId) {
@@ -491,7 +417,6 @@ const app = {
   async loadMap() {
     const container = document.getElementById("map-container");
     if (!container) return;
-
     await initMap("map-container");
     await loadMapMarkers();
   },
@@ -529,6 +454,39 @@ const app = {
     `;
   },
 };
+
+// ── Standalone helpers (Safari-compatible) ──
+function _signal(ms) {
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), ms);
+  return ctrl.signal;
+}
+function _delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+function _parseJson(text) {
+  try { return JSON.parse(text); } catch (e) { return null; }
+}
+function _extractName(text) {
+  if (!text) return "";
+  const patterns = [
+    /[📍📌🏠🏪]\s*([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/,
+    /(?:at|喺|@)\s+([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      let name = m[1].trim().replace(/[,.\s\-]+$/g, "").trim();
+      if (name.length >= 2 && name.length <= 40 && !name.startsWith("@")) return name;
+    }
+  }
+  const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length > 0) {
+    const first = lines[0];
+    if (first.length >= 2 && first.length <= 40 && !first.toLowerCase().startsWith("by ") && !first.startsWith("@")) return first;
+  }
+  return "";
+}
 
 // ── Init on load ──
 document.addEventListener("DOMContentLoaded", () => app.init());
