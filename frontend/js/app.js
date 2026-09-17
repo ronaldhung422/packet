@@ -140,9 +140,9 @@ const app = {
 
     document.getElementById("parse-result").innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text3);font-size:12px;">解析中，稍等...</p>';
 
-    // Timeout after 12 seconds
+    // Timeout after 8 seconds (oEmbed usually fails fast on restricted networks)
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), 12000)
+      setTimeout(() => reject(new Error("timeout")), 8000)
     );
 
     try {
