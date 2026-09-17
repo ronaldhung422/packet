@@ -138,38 +138,55 @@ const app = {
       return;
     }
 
-    document.getElementById("parse-result").innerHTML = '<div class="spinner"></div>';
-    const data = await API.parseLink(url);
+    document.getElementById("parse-result").innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text3);font-size:12px;">解析中，稍等...</p>';
 
-    if (data.error) {
-      document.getElementById("parse-result").innerHTML = `<div class="parse-result"><span style="color:var(--accent)">⚠️ ${data.error}</span></div>`;
-      return;
-    }
+    // Timeout after 12 seconds
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), 12000)
+    );
 
-    // Fill in the form
-    if (data.suggested_name) {
-      document.getElementById("add-name").value = data.suggested_name;
-      this.autoGeocode(data.suggested_name);
-    }
-    if (data.description) {
-      document.getElementById("add-notes").value = data.description;
-    }
-    if (data.source) {
-      document.getElementById("add-source").value = data.source;
-    }
-    // Store URL
-    document.getElementById("add-url-store").value = url;
+    try {
+      const data = await Promise.race([API.parseLink(url), timeoutPromise]);
 
-    document.getElementById("parse-result").innerHTML = `
-      <div class="parse-result">
-        <div class="parse-label">來源</div>
-        <div class="parse-val">${data.source || "未知"}</div>
-        <div class="parse-label">建議名稱</div>
-        <div class="parse-val">${data.suggested_name || "（未能自動偵測）"}</div>
-        ${data.image_url ? `<img src="${data.image_url}" style="width:100%;border-radius:8px;margin-top:6px;">` : ""}
-      </div>
-    `;
-    this.toast("✅ 已偵測到餐廳名！");
+      if (data.error) {
+        document.getElementById("parse-result").innerHTML =
+          `<div class="parse-result"><span style="color:var(--accent)">⚠️ ${data.error}</span></div>`;
+        return;
+      }
+
+      // Fill in the form
+      if (data.suggested_name) {
+        document.getElementById("add-name").value = data.suggested_name;
+        this.autoGeocode(data.suggested_name);
+      }
+      if (data.description) {
+        document.getElementById("add-notes").value = data.description;
+      }
+      if (data.source) {
+        document.getElementById("add-source").value = data.source;
+      }
+      document.getElementById("add-url-store").value = url;
+
+      document.getElementById("parse-result").innerHTML = `
+        <div class="parse-result">
+          <div class="parse-label">來源</div>
+          <div class="parse-val">${data.source || "未知"}</div>
+          <div class="parse-label">建議名稱</div>
+          <div class="parse-val">${data.suggested_name || "（未能自動偵測）"}</div>
+          ${data.image_url ? `<img src="${data.image_url}" style="width:100%;border-radius:8px;margin-top:6px;" referrerpolicy="no-referrer">` : ""}
+          ${data.parse_error ? `<div class="parse-label" style="color:var(--accent);margin-top:4px;">${data.parse_error}</div>` : ""}
+        </div>
+      `;
+      this.toast("✅ 已偵測到餐廳名！");
+    } catch (e) {
+      document.getElementById("parse-result").innerHTML = `
+        <div class="parse-result">
+          <span style="color:var(--accent);">⚠️ 解析超時，可以手動輸入餐廳名 👇</span>
+          <div class="parse-label" style="margin-top:4px;">連結已儲存，手動填名稱就 OK</div>
+        </div>
+      `;
+      document.getElementById("add-url-store").value = url;
+    }
   },
 
   async autoGeocode(name) {
