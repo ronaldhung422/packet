@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <title>Packet</title>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header class="app-header">
+  <h1>📦 Packet</h1>
+  <span class="badge" id="header-count"></span>
+  <button class="header-btn" onclick="app.showTab('add')" title="加新地點">➕</button>
+</header>
+
+<!-- ─── Main Content ─── -->
+<div class="main-content">
+
+  <!-- ═══ Screen: List ═══ -->
+  <div class="screen active" id="screen-list">
+    <div class="search-bar">
+      <input id="list-search" placeholder="🔍 搜尋餐廳名、地址..." oninput="app.loadList()" />
+    </div>
+    <div class="cat-pills" id="cat-pills"></div>
+    <div id="place-list"></div>
+  </div>
+
+  <!-- ═══ Screen: Add ═══ -->
+  <div class="screen" id="screen-add">
+    <h3 style="margin-bottom:12px;">➕ 加新地點</h3>
+
+    <!-- Paste link -->
+    <div class="form-group">
+      <label>貼上 IG / Threads 連結</label>
+      <div style="display:flex;gap:6px;">
+        <input id="add-url" class="form-input" placeholder="https://www.instagram.com/..." style="flex:1;" />
+        <button class="btn btn-primary btn-sm" onclick="app.parseLink()">解析</button>
+      </div>
+    </div>
+    <div id="parse-result"></div>
+
+    <hr style="border:0;border-top:1px solid var(--surface2);margin:12px 0;" />
+
+    <!-- Manual form -->
+    <div class="form-group">
+      <label>名稱 *</label>
+      <input id="add-name" class="form-input" placeholder="餐廳/地方名" />
+    </div>
+    <div class="form-group">
+      <label>類別</label>
+      <select id="add-category" class="form-input cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label>評分</label>
+      <select id="add-rating" class="form-input" style="max-width:100px;">
+        <option value="0">未評分</option>
+        <option value="1">⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="5">⭐⭐⭐⭐⭐</option>
+      </select>
+    </div>
+
+    <button class="btn btn-outline btn-sm" onclick="app.searchGeocode()" style="margin-bottom:8px;">📍 自動搵地址</button>
+    <div class="form-group">
+      <label>地址</label>
+      <input id="add-address" class="form-input" placeholder="地址" />
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div class="form-group" style="flex:1;">
+        <label>緯度</label>
+        <input id="add-lat" class="form-input" placeholder="22.3193" type="number" step="any" />
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>經度</label>
+        <input id="add-lng" class="form-input" placeholder="114.1694" type="number" step="any" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>電話</label>
+      <input id="add-phone" class="form-input" placeholder="電話號碼" />
+    </div>
+
+    <button class="btn btn-outline btn-sm" onclick="app.searchOpenRiceSuggest()" style="margin-bottom:8px;">🍚 搵 OpenRice 連結</button>
+    <div class="form-group">
+      <label>OpenRice 連結</label>
+      <input id="add-openrice" class="form-input" placeholder="https://www.openrice.com/..." />
+    </div>
+    <div class="form-group">
+      <label>備註</label>
+      <textarea id="add-notes" class="form-input" placeholder="寫低你嘅感想..."></textarea>
+    </div>
+
+    <!-- Hidden fields -->
+    <input type="hidden" id="add-url-store" />
+    <input type="hidden" id="add-source" value="manual" />
+
+    <button class="btn btn-primary btn-full" onclick="app.savePlace()" style="margin-top:8px;">💾 儲存</button>
+    <button class="btn btn-outline btn-full" onclick="app.clearAddForm();app.showTab('list')" style="margin-top:6px;">取消</button>
+  </div>
+
+  <!-- ═══ Screen: Map ═══ -->
+  <div class="screen" id="screen-map">
+    <div id="map-container"></div>
+  </div>
+
+  <!-- ═══ Screen: Stats ═══ -->
+  <div class="screen" id="screen-stats">
+    <div id="stats-content"></div>
+  </div>
+
+</div>
+
+<!-- ─── Tab Bar ─── -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="list" onclick="app.showTab('list')">
+    <span class="tab-icon">📋</span> 列表
+  </button>
+  <button class="tab-btn" data-tab="add" onclick="app.showTab('add')">
+    <span class="tab-icon">➕</span> 新增
+  </button>
+  <button class="tab-btn" data-tab="map" onclick="app.showTab('map')">
+    <span class="tab-icon">🗺️</span> 地圖
+  </button>
+  <button class="tab-btn" data-tab="stats" onclick="app.showTab('stats')">
+    <span class="tab-icon">📊</span> 統計
+  </button>
+</div>
+
+<!-- ─── Detail Modal ─── -->
+<div class="modal-overlay" id="detail-modal" onclick="app.closeDetail()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ─── Toast ─── -->
+<div class="toast" id="toast"></div>
+
+<!-- ─── Scripts ─── -->
+<script src="/js/api.js"></script>
+<script src="/js/map.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>
