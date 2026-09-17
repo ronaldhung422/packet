@@ -183,7 +183,10 @@ const app = {
       ? `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`
       : `https://threads.net/oembed?url=${encodeURIComponent(url)}`;
 
+    const CF_WORKER = "https://packetproxy.packet-proxy.workers.dev";
+
     const proxies = [
+      `${CF_WORKER}?url=${encodeURIComponent(oembedUrl)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(oembedUrl)}`,
       `https://corsproxy.io/?${encodeURIComponent(oembedUrl)}`,
     ];
