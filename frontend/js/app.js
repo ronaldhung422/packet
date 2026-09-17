@@ -140,53 +140,181 @@ const app = {
 
     document.getElementById("parse-result").innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text3);font-size:12px;">解析中，稍等...</p>';
 
-    // Timeout after 8 seconds (oEmbed usually fails fast on restricted networks)
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), 8000)
-    );
+    // Step 1: Try backend parse (detects source)
+    const data = await API.parseLink(url);
 
-    try {
-      const data = await Promise.race([API.parseLink(url), timeoutPromise]);
+    // If backend got a name, use it
+    if (data.suggested_name) {
+      this._fillParsedData(data, url);
+      return;
+    }
 
-      if (data.error) {
-        document.getElementById("parse-result").innerHTML =
-          `<div class="parse-result"><span style="color:var(--accent)">⚠️ ${data.error}</span></div>`;
+    // Step 2: If backend says try_browser, fetch oEmbed from browser directly
+    if (data.parse_error === "try_browser" && data.source) {
+      const browserResult = await this._browserOEmbed(url, data.source);
+      if (browserResult) {
+        this._fillParsedData(browserResult, url);
         return;
       }
-
-      // Fill in the form
-      if (data.suggested_name) {
-        document.getElementById("add-name").value = data.suggested_name;
-        this.autoGeocode(data.suggested_name);
-      }
-      if (data.description) {
-        document.getElementById("add-notes").value = data.description;
-      }
-      if (data.source) {
-        document.getElementById("add-source").value = data.source;
-      }
-      document.getElementById("add-url-store").value = url;
-
-      document.getElementById("parse-result").innerHTML = `
-        <div class="parse-result">
-          <div class="parse-label">來源</div>
-          <div class="parse-val">${data.source || "未知"}</div>
-          <div class="parse-label">建議名稱</div>
-          <div class="parse-val">${data.suggested_name || "（未能自動偵測）"}</div>
-          ${data.image_url ? `<img src="${data.image_url}" style="width:100%;border-radius:8px;margin-top:6px;" referrerpolicy="no-referrer">` : ""}
-          ${data.parse_error ? `<div class="parse-label" style="color:var(--accent);margin-top:4px;">${data.parse_error}</div>` : ""}
-        </div>
-      `;
-      this.toast("✅ 已偵測到餐廳名！");
-    } catch (e) {
-      document.getElementById("parse-result").innerHTML = `
-        <div class="parse-result">
-          <span style="color:var(--accent);">⚠️ 解析超時，可以手動輸入餐廳名 👇</span>
-          <div class="parse-label" style="margin-top:4px;">連結已儲存，手動填名稱就 OK</div>
-        </div>
-      `;
-      document.getElementById("add-url-store").value = url;
     }
+
+    // Step 3: Everything failed — store link, user types name
+    document.getElementById("parse-result").innerHTML = `
+      <div class="parse-result">
+        <span style="color:var(--accent);">⚠️ 無法自動偵測餐廳名</span>
+        <div class="parse-label" style="margin-top:4px;">連結已儲存 🎯 打個名就 OK</div>
+      </div>
+    `;
+    document.getElementById("add-url-store").value = url;
+  },
+
+  async _browserOEmbed(url, source) {
+    // Try Instagram/Threads oEmbed directly from the browser
+    const oembedUrl = source === "instagram"
+      ? `https://api.instagram.com/oembed?url=${encodeURI(url)}`
+      : `https://threads.net/oembed?url=${encodeURI(url)}`;
+
+    // Try direct fetch first (works when CORS allows it)
+    try {
+      const resp = await fetch(oembedUrl, { signal: AbortSignal.timeout(5000) });
+      if (resp.ok) {
+        const json = await resp.json();
+        return this._oembedToResult(json, source);
+      }
+    } catch (e) {
+      // CORS blocked, try via CORS proxy
+    }
+
+    // Try via public CORS proxy (free, no signup)
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(oembedUrl)}`,
+      `https://corsproxy.io/?${encodeURIComponent(oembedUrl)}`,
+    ];
+
+    for (const proxyUrl of proxies) {
+      try {
+        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+          const text = await resp.text();
+          try {
+            const json = JSON.parse(text);
+            return this._oembedToResult(json, source);
+          } catch (e) { /* not JSON */ }
+          // If not JSON, try to extract from text
+          const name = this._extractNameFromHtml(text);
+          if (name) {
+            return { suggested_name: name, source, image_url: "" };
+          }
+        }
+      } catch (e) { /* proxy failed, try next */ }
+    }
+
+    // Last try: Instagram embed page
+    if (source === "instagram") {
+      const postId = url.match(/instagram\.com\/p\/([^\/\?]+)/);
+      if (postId) {
+        const embedUrl = `https://www.instagram.com/p/${postId[1]}/embed/`;
+        try {
+          const resp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(embedUrl)}`, {
+            signal: AbortSignal.timeout(6000)
+          });
+          if (resp.ok) {
+            const html = await resp.text();
+            const name = this._extractNameFromHtml(html);
+            if (name) {
+              return { suggested_name: name, source, image_url: "" };
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    return null;
+  },
+
+  _oembedToResult(json, source) {
+    const title = json.title || "";
+    // Try to extract name from title using heuristics
+    const name = this._extractNameFromCaption(title);
+    return {
+      suggested_name: name || "",
+      source,
+      image_url: json.thumbnail_url || "",
+      description: json.description || json.author_name || "",
+    };
+  },
+
+  _extractNameFromCaption(caption) {
+    if (!caption) return "";
+
+    // Strategy 1: 📍 or at pattern
+    const patterns = [
+      /[📍📌🏠🏪]\s*([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/,
+      /(?:at|喺|@)\s+([A-Za-z0-9\u4e00-\u9fff\s]{2,40})/i,
+    ];
+    for (const p of patterns) {
+      const m = caption.match(p);
+      if (m) {
+        let name = m[1].trim().replace(/[,\.\s\-]+$/g, "").trim();
+        if (name.length >= 2 && name.length <= 40 && !name.startsWith("@")) {
+          return name;
+        }
+      }
+    }
+
+    // Strategy 2: First meaningful line
+    const lines = caption.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length > 0) {
+      const first = lines[0];
+      if (first.length >= 2 && first.length <= 40 &&
+          !first.toLowerCase().startsWith("by ") && !first.startsWith("@")) {
+        return first;
+      }
+    }
+
+    return "";
+  },
+
+  _extractNameFromHtml(html) {
+    // Try to find restaurant name in embed HTML
+    const patterns = [
+      /<meta\s+property="og:title"\s+content="([^"]+)"/i,
+      /<title>([^<]+)<\/title>/i,
+      /"caption":"([^"]+)"/,
+    ];
+    for (const p of patterns) {
+      const m = html.match(p);
+      if (m) {
+        const cleaned = m[1].replace(/\\u[0-9a-f]{4}/g, "").trim();
+        if (cleaned.length >= 2 && cleaned.length < 60) {
+          return this._extractNameFromCaption(cleaned);
+        }
+      }
+    }
+    return "";
+  },
+
+  _fillParsedData(data, url) {
+    if (data.suggested_name) {
+      document.getElementById("add-name").value = data.suggested_name;
+      this.autoGeocode(data.suggested_name);
+    }
+    if (data.description) {
+      document.getElementById("add-notes").value = data.description;
+    }
+    document.getElementById("add-source").value = data.source || "manual";
+    document.getElementById("add-url-store").value = url;
+
+    document.getElementById("parse-result").innerHTML = `
+      <div class="parse-result">
+        <div class="parse-label">來源</div>
+        <div class="parse-val">${data.source || "未知"}</div>
+        <div class="parse-label">建議名稱</div>
+        <div class="parse-val">${data.suggested_name || "（未能自動偵測）"}</div>
+        ${data.image_url ? `<img src="${data.image_url}" style="width:100%;border-radius:8px;margin-top:6px;" referrerpolicy="no-referrer">` : ""}
+      </div>
+    `;
+    this.toast("✅ 已偵測到餐廳名！");
   },
 
   async autoGeocode(name) {
