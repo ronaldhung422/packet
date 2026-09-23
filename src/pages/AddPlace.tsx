@@ -172,7 +172,7 @@ const AddPlace = () => {
         </button>
         
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900">{editingPlace ? (language === 'zh-TW' ? '編輯地點' : 'Edit Place') : t.addNewPlace[language]}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{editingPlace ? t.editPlace[language] : t.addNewPlace[language]}</h1>
           <div className="flex items-center justify-center space-x-4 mt-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
               step === 'link' ? 'bg-packet-purple text-white' : 'bg-green-500 text-white'
@@ -198,10 +198,10 @@ const AddPlace = () => {
               <span className="text-3xl">🍜</span>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {language === 'zh-TW' ? '貼上連結' : 'Paste a Link'}
+              {t.pasteLink[language]}
             </h2>
             <p className="text-gray-600">
-              {language === 'zh-TW' ? '從 Instagram 或 Threads 複製餐廳貼文連結' : 'Copy link from Instagram or Threads post about a restaurant'}
+              {t.pasteLinkDesc[language]}
             </p>
           </div>
 
@@ -215,10 +215,10 @@ const AddPlace = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {language === 'zh-TW' ? '新增詳細資訊' : 'Add Details'}
+              {t.addDetails[language]}
             </h2>
             <p className="text-gray-600">
-              {language === 'zh-TW' ? '新增關於餐廳的資訊' : 'Add information about the restaurant'}
+              {t.addDetailsDesc[language]}
             </p>
           </div>
 
@@ -236,10 +236,10 @@ const AddPlace = () => {
                 <div>
                   <div className="font-medium">
                     {platform === 'instagram' ? 'Instagram' : 
-                     platform === 'threads' ? 'Threads' : (language === 'zh-TW' ? '手動輸入' : 'Manual entry')}
+                     platform === 'threads' ? 'Threads' : t.manualEntry[language]}
                   </div>
                   <div className="text-sm text-gray-500 truncate max-w-[200px]">
-                    {link || (language === 'zh-TW' ? '無連結' : 'No link provided')}
+                    {link || t.noLinkProvided[language]}
                   </div>
                 </div>
               </div>
@@ -248,7 +248,7 @@ const AddPlace = () => {
                 onClick={() => setStep('link')}
                 className="text-packet-purple hover:text-packet-purple-dark font-medium"
               >
-                {language === 'zh-TW' ? '更改' : 'Change'}
+                {t.change[language]}
               </button>
             </div>
           </div>
@@ -320,7 +320,7 @@ const AddPlace = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <Tag className="w-4 h-4" />
-                  <span>Tags</span>
+                  <span>{t.tags[language]}</span>
                 </div>
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -351,7 +351,7 @@ const AddPlace = () => {
                       handleAddTag()
                     }
                   }}
-                  placeholder={language === 'zh-TW' ? '新增標籤（例如：披薩、義大利、約會夜）' : 'Add tags (e.g., pizza, italian, date-night)'}
+                  placeholder={t.addTagsPlaceholder[language]}
                   className="input flex-1"
                 />
                 <button
@@ -359,7 +359,7 @@ const AddPlace = () => {
                   onClick={handleAddTag}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium"
                 >
-                  {language === 'zh-TW' ? '新增' : 'Add'}
+                  {t.navigation.add[language]}
                 </button>
               </div>
             </div>
@@ -369,7 +369,7 @@ const AddPlace = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <div className="flex items-center space-x-2">
                     <User className="w-4 h-4" />
-                    <span>{language === 'zh-TW' ? '新增者' : 'Added By'}</span>
+                    <span>{t.addedBy[language]}</span>
                   </div>
                 </label>
                 <select
@@ -408,26 +408,26 @@ const AddPlace = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4" />
-                  <span>{t.location[language]} ({language === 'zh-TW' ? '選填' : 'optional'})</span>
+                  <span>{t.location[language]} ({t.optional[language]})</span>
                 </div>
               </label>
               <input
                 type="text"
                 value={placeDetails.location}
                 onChange={(e) => setPlaceDetails(prev => ({ ...prev, location: e.target.value }))}
-                placeholder={language === 'zh-TW' ? '地址或區域' : 'Address or area'}
+                placeholder={t.locationPlaceholder[language]}
                 className="input"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.notes[language]} ({language === 'zh-TW' ? '選填' : 'optional'})
+                {t.notes[language]} ({t.optional[language]})
               </label>
               <textarea
                 value={placeDetails.notes}
                 onChange={(e) => setPlaceDetails(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder={language === 'zh-TW' ? '任何額外的備註或提醒' : 'Any additional notes or reminders'}
+                placeholder={t.notesPlaceholder[language]}
                 rows={2}
                 className="input"
               />
@@ -441,7 +441,7 @@ const AddPlace = () => {
               onClick={handleBack}
               className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              {language === 'zh-TW' ? '返回' : 'Back'}
+              {t.back[language]}
             </button>
             <button
               type="submit"
