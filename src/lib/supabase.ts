@@ -1,10 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-// These would be environment variables in production
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+const isConfigured = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
 
-// Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
@@ -18,9 +17,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Realtime subscriptions for sync
 export const setupRealtimeSync = (pairCode: string, onSync: (payload: any) => void) => {
-  const channel = supabase
+  return supabase
     .channel(`pair-${pairCode}`)
     .on(
       'postgres_changes',
@@ -33,14 +31,9 @@ export const setupRealtimeSync = (pairCode: string, onSync: (payload: any) => vo
       onSync
     )
     .subscribe()
-
-  return channel
 }
 
-// Check if Supabase is configured
-export const isSupabaseConfigured = () => {
-  return !supabaseUrl.includes('your-project') && !supabaseAnonKey.includes('your-anon-key')
-}
+export const isSupabaseConfigured = () => isConfigured
 
 // Get sync status
 export const getSyncStatus = async () => {

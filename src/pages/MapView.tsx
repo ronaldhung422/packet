@@ -124,7 +124,7 @@ const MapView = () => {
               
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                 <div className="text-sm text-gray-500">
-                  由 {place.addedBy === 'ronald' ? 'Ronald' : 'Kerry'} 新增
+                  由 {place.discoveredBy === 'ronald' ? 'Ronald' : 'Kerry'} 新增
                 </div>
                 
                 <div className="flex items-center space-x-2">

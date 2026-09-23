@@ -1,191 +1,171 @@
-import { supabase, setupRealtimeSync, isSupabaseConfigured } from '../lib/supabase'
-import { Place } from '../types'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { Place, PlaceCollection } from '../types'
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils/storage'
-import toast from 'react-hot-toast'
 
-const LOCAL_CHANGES_KEY = 'packet_pending_changes'
-const LAST_SYNC_KEY = 'packet_last_sync'
-
-type SyncChange =
-  | { type: 'create' | 'update'; place: Place; timestamp: string }
-  | { type: 'delete'; place: { id: string }; timestamp: string }
+type PlaceChange = { type: 'create' | 'update'; place: Place } | { type: 'delete'; place: { id: string } }
+type CollectionChange = { type: 'create' | 'update'; collection: PlaceCollection } | { type: 'delete'; collection: { id: string } }
+type Change = PlaceChange | CollectionChange
+type Pending = Change & { operationId: string }
+const QUEUE_KEY = 'packet_pending_changes'
 
 export class SyncService {
-  private pairCode: string | null = null
-  private pendingChanges: SyncChange[] = loadFromLocalStorage<SyncChange[]>(LOCAL_CHANGES_KEY) || []
-  private syncInProgress = false
-  private realtimeChannel: ReturnType<typeof setupRealtimeSync> | null = null
+  private collectionId: string | null = null
+  private pending = (loadFromLocalStorage<Pending[]>(QUEUE_KEY) || []).map(change => ({
+    ...change, operationId: change.operationId || crypto.randomUUID()
+  }))
+  private running: Promise<Place[] | null> | null = null
+  private timer: ReturnType<typeof setInterval> | null = null
+  private error: string | undefined
 
   constructor() {
-    window.addEventListener('online', () => {
-      void this.trySync()
+    window.addEventListener('online', () => this.backgroundSync())
+    window.addEventListener('focus', () => this.backgroundSync())
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.backgroundSync()
     })
   }
 
-  async initialize(pairCode: string): Promise<void> {
-    this.pairCode = pairCode
-    if (!isSupabaseConfigured()) return
+  isCloudConfigured() { return isSupabaseConfigured() }
 
-    if (!this.realtimeChannel) {
-      this.realtimeChannel = setupRealtimeSync(pairCode, payload => this.handleRemoteChange(payload))
+  private async authenticate() {
+    if (!isSupabaseConfigured()) throw new Error('雲端尚未設定 / Cloud is not configured')
+    const { data, error } = await supabase.auth.getSession()
+    if (error) throw error
+    if (!data.session) {
+      const result = await supabase.auth.signInAnonymously()
+      if (result.error) throw result.error
     }
+  }
 
+  async connect(code?: string): Promise<string> {
+    await this.authenticate()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData.session?.user.id
+    const priorUser = loadFromLocalStorage<string>('packet_sync_user')
+    if (priorUser && userId && priorUser !== userId) {
+      await supabase.auth.signOut()
+      const result = await supabase.auth.signInAnonymously()
+      if (result.error) throw result.error
+    }
+    const { data, error } = await supabase.rpc('packet_connect', { p_code: code?.trim().toLowerCase() || null })
+    if (error) throw error
+    const collection = data?.[0]
+    if (!collection) throw new Error('無法開啟共享收藏 / Could not open collection')
+    const previous = loadFromLocalStorage<string>('packet_collection_id')
+    if (previous && previous !== collection.collection_id) {
+      throw new Error('此裝置已連結其他收藏 / Device already linked to another collection')
+    }
+    this.collectionId = collection.collection_id
+    saveToLocalStorage('packet_collection_id', this.collectionId)
+    const { data: activeSession } = await supabase.auth.getSession()
+    if (activeSession.session?.user.id) saveToLocalStorage('packet_sync_user', activeSession.session.user.id)
+    if (!loadFromLocalStorage<boolean>(`packet_seeded_${this.collectionId}`)) {
+      const local = loadFromLocalStorage<Place[]>('packet_places') || []
+      const seeds: Pending[] = local.map(place => ({ type: 'create', place, operationId: crypto.randomUUID() }))
+      this.pending = [...seeds, ...this.pending]
+      this.persistQueue()
+      saveToLocalStorage(`packet_seeded_${this.collectionId}`, true)
+    }
+    if (!this.timer) this.timer = setInterval(() => {
+      if (!document.hidden) this.backgroundSync()
+    }, 15000)
+    return collection.invite_code
+  }
+
+  async initialize(code: string): Promise<void> {
+    await this.connect(code)
     await this.fullSync()
-    await this.trySync()
   }
 
-  async ensurePair(pairCode: string): Promise<boolean> {
-    if (!isSupabaseConfigured()) return true
+  queueChange(change: Change): void {
+    this.pending.push({ ...change, operationId: crypto.randomUUID() })
+    this.persistQueue()
+    this.backgroundSync()
+  }
 
-    const { error } = await supabase.from('pairs').upsert(
-      { pair_code: pairCode, is_active: true, last_sync: new Date().toISOString() },
-      { onConflict: 'pair_code' }
-    )
+  private persistQueue() { saveToLocalStorage(QUEUE_KEY, this.pending) }
 
-    if (error) {
-      console.error('Pair setup failed:', error)
-      return false
+  private backgroundSync() {
+    void this.fullSync().catch(() => { /* retry on focus/reconnect */ })
+  }
+
+  fullSync(): Promise<Place[] | null> {
+    if (this.running) return this.running
+    if (!this.collectionId || !navigator.onLine) return Promise.resolve(null)
+    this.running = this.exchange().catch(error => {
+      this.error = error instanceof Error ? error.message : String(error.message || error)
+      document.dispatchEvent(new CustomEvent('sync-error', { detail: this.error }))
+      throw error
+    }).finally(() => { this.running = null })
+    return this.running
+  }
+
+  private async exchange(): Promise<Place[]> {
+    while (this.pending.length) {
+      const batch = this.pending.slice(0, 100)
+      const { error } = await supabase.rpc('packet_apply', { p_collection: this.collectionId, p_changes: batch })
+      if (error) throw error
+      this.pending.splice(0, batch.length)
+      this.persistQueue()
     }
-
-    return true
-  }
-
-  queueChange(change: Omit<SyncChange, 'timestamp'>): void {
-    this.pendingChanges.push({ ...change, timestamp: new Date().toISOString() } as SyncChange)
-    saveToLocalStorage(LOCAL_CHANGES_KEY, this.pendingChanges)
-    void this.trySync()
-  }
-
-  async trySync(): Promise<void> {
-    if (!isSupabaseConfigured() || !navigator.onLine || !this.pairCode || this.syncInProgress || !this.pendingChanges.length) return
-
-    this.syncInProgress = true
-    const completed: SyncChange[] = []
-
-    try {
-      for (const change of this.pendingChanges) {
-        if (change.type === 'delete') {
-          const { error } = await supabase
-            .from('places')
-            .update({ deleted_at: new Date().toISOString() })
-            .eq('id', change.place.id)
-            .eq('pair_code', this.pairCode)
-          if (error) throw error
-        } else {
-          const { error } = await supabase.from('places').upsert(this.toDatabase(change.place), { onConflict: 'id' })
-          if (error) throw error
-        }
-        completed.push(change)
+    
+    // Sync places
+    const { data, error } = await supabase.from('packet_records').select('id,data,deleted').eq('collection_id', this.collectionId)
+    if (error) throw error
+    const merged = new Map<string, Place>()
+    for (const row of data || []) {
+      if (!row.deleted && row.data) merged.set(row.id, row.data as Place)
+    }
+    for (const change of this.pending) {
+      if ('place' in change) {
+        if (change.type === 'delete') merged.delete(change.place.id)
+        else merged.set(change.place.id, change.place)
       }
-
-      this.pendingChanges = this.pendingChanges.slice(completed.length)
-      saveToLocalStorage(LOCAL_CHANGES_KEY, this.pendingChanges)
-      saveToLocalStorage(LAST_SYNC_KEY, new Date().toISOString())
-    } catch (error) {
-      console.error('Sync failed:', error)
-      if (completed.length) {
-        this.pendingChanges = this.pendingChanges.slice(completed.length)
-        saveToLocalStorage(LOCAL_CHANGES_KEY, this.pendingChanges)
-      }
-    } finally {
-      this.syncInProgress = false
     }
-  }
-
-  async fullSync(): Promise<Place[] | null> {
-    if (!isSupabaseConfigured() || !navigator.onLine || !this.pairCode) return null
-
-    const { data, error } = await supabase
-      .from('places')
-      .select('*')
-      .eq('pair_code', this.pairCode)
-      .is('deleted_at', null)
-      .order('added_at', { ascending: false })
-
-    if (error) {
-      console.error('Full sync failed:', error)
-      return null
-    }
-
-    const places = (data || []).map(row => this.fromDatabase(row))
+    const places = [...merged.values()]
     saveToLocalStorage('packet_places', places)
-    saveToLocalStorage(LAST_SYNC_KEY, new Date().toISOString())
+    
+    // Sync collections
+    const { data: collectionsData, error: collectionsError } = await supabase
+      .from('packet_place_collections')
+      .select('*')
+      .eq('collection_id', this.collectionId)
+    
+    if (!collectionsError && collectionsData) {
+      const collections: PlaceCollection[] = collectionsData.map(row => ({
+        id: row.id,
+        collectionId: row.collection_id,
+        name: row.name,
+        emoji: row.emoji,
+        placeIds: [], // Will be computed from places
+        displayOrder: row.display_order,
+        createdBy: row.created_by as 'ronald' | 'kerry',
+        createdAt: row.created_at,
+        coverImage: row.cover_image
+      }))
+      saveToLocalStorage('packet_collections', collections)
+      document.dispatchEvent(new CustomEvent('collections-updated', { detail: collections }))
+    }
+    
+    saveToLocalStorage('packet_last_sync', new Date().toISOString())
+    this.error = undefined
     document.dispatchEvent(new CustomEvent('places-updated', { detail: places }))
     return places
   }
 
   getStatus() {
     return {
-      pendingChanges: this.pendingChanges.length,
-      lastSync: loadFromLocalStorage<string>(LAST_SYNC_KEY),
-      syncInProgress: this.syncInProgress
+      pendingChanges: this.pending.length,
+      lastSync: loadFromLocalStorage<string>('packet_last_sync'),
+      syncInProgress: Boolean(this.running),
+      error: this.error
     }
   }
 
   cleanup(): void {
-    if (this.realtimeChannel) {
-      void supabase.removeChannel(this.realtimeChannel)
-      this.realtimeChannel = null
-    }
-  }
-
-  private handleRemoteChange(payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }): void {
-    const current = loadFromLocalStorage<Place[]>('packet_places') || []
-    const incoming = payload.eventType === 'DELETE' ? null : this.fromDatabase(payload.new)
-    let next = current
-
-    if (payload.eventType === 'INSERT' && incoming && !current.some(place => place.id === incoming.id)) {
-      next = [...current, incoming]
-    } else if (payload.eventType === 'UPDATE' && incoming) {
-      next = current.some(place => place.id === incoming.id)
-        ? current.map(place => place.id === incoming.id ? incoming : place)
-        : [...current, incoming]
-    } else if (payload.eventType === 'DELETE') {
-      next = current.filter(place => place.id !== String(payload.old.id))
-    }
-
-    saveToLocalStorage('packet_places', next)
-    document.dispatchEvent(new CustomEvent('places-updated', { detail: next }))
-    if (payload.eventType !== 'UPDATE') toast.success('Shared places updated')
-  }
-
-  private toDatabase(place: Place) {
-    return {
-      id: place.id,
-      pair_code: this.pairCode,
-      name: place.name,
-      description: place.description || null,
-      link: place.link,
-      extracted_from: place.extractedFrom || null,
-      category: place.category,
-      tags: place.tags,
-      added_by: place.addedBy,
-      added_at: place.addedAt,
-      location: place.location || null,
-      memories: place.memories,
-      visited_at: place.visitedAt || null,
-      rating: place.rating || null,
-      notes: place.notes || null
-    }
-  }
-
-  private fromDatabase(row: Record<string, any>): Place {
-    return {
-      id: String(row.id),
-      name: row.name,
-      description: row.description || undefined,
-      link: row.link,
-      extractedFrom: row.extracted_from || undefined,
-      category: row.category,
-      tags: row.tags || [],
-      addedBy: row.added_by,
-      addedAt: row.added_at,
-      location: row.location || undefined,
-      memories: row.memories || [],
-      visitedAt: row.visited_at || undefined,
-      rating: row.rating || undefined,
-      notes: row.notes || undefined
-    }
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+    this.collectionId = null
   }
 }
 

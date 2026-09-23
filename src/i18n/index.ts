@@ -171,7 +171,6 @@ export const translations = {
   point: { 'zh-TW': '分', en: 'point' },
   topTags: { 'zh-TW': '熱門標籤', en: 'Top Tags' },
   noTagsYet: { 'zh-TW': '還沒有標籤。為你的地點新增標籤！', en: 'No tags yet. Add tags to your places!' },
-  noPlacesYet: { 'zh-TW': '還沒有地點。開始新增吧！', en: 'No places yet. Start adding!' },
   
   // LinkInput component translations
   paste: { 'zh-TW': '貼上', en: 'Paste' },
@@ -197,6 +196,38 @@ export const translations = {
   adventuresWaiting: { 'zh-TW': '等待探索的冒險', en: 'Adventures waiting' },
   viewDetailedStats: { 'zh-TW': '檢視詳細統計', en: 'View Detailed Stats' },
   compareWithPartner: { 'zh-TW': '與伴侶比較', en: 'Compare with Partner' },
+  
+  // EmptyState component translations
+  noPlacesYetEmpty: { 'zh-TW': '尚未有地點', en: 'No places yet' },
+  startByAdding: { 'zh-TW': '從 Instagram 或 Threads 新增你的第一家餐廳', en: 'Start by adding your first restaurant from Instagram or Threads' },
+  emptyStateAddFirstPlace: { 'zh-TW': '新增第一個地點', en: 'Add First Place' },
+  noLocationsYet: { 'zh-TW': '尚未有位置', en: 'No locations yet' },
+  addPlacesWithLocations: { 'zh-TW': '新增有地址的地點以在地圖上查看', en: 'Add places with locations to see them on the map' },
+  noMemoriesYet: { 'zh-TW': '尚未有回憶', en: 'No memories yet' },
+  addMemoriesToPlaces: { 'zh-TW': '為造訪過的地點新增回憶以建立你的美食日記', en: 'Add memories to your visited places to create your food diary' },
+  browsePlaces: { 'zh-TW': '瀏覽地點', en: 'Browse Places' },
+  notPairedYetEmpty: { 'zh-TW': '尚未配對', en: 'Not paired yet' },
+  pairWithPartnerToShare: { 'zh-TW': '與伴侶配對以分享你們的美食發現', en: 'Pair with your partner to share your food discoveries' },
+  pairNowAction: { 'zh-TW': '立即配對', en: 'Pair Now' },
+  quickTips: { 'zh-TW': '快速提示：', en: 'Quick tips:' },
+  copyFromInstagram: { 'zh-TW': '從 Instagram 複製', en: 'Copy from Instagram' },
+  tapShareCopyLink: { 'zh-TW': '點擊分享 → 複製連結', en: 'Tap share → Copy link' },
+  pasteHere: { 'zh-TW': '貼到這裡', en: 'Paste here' },
+  appExtractsInfo: { 'zh-TW': 'App 會擷取餐廳資訊', en: 'App extracts restaurant info' },
+  addManually: { 'zh-TW': '手動新增', en: 'Add manually' },
+  typeNameIfFails: { 'zh-TW': '擷取失敗時可手動輸入名稱', en: 'Type name if extraction fails' },
+  addLocations: { 'zh-TW': '新增位置', en: 'Add locations' },
+  includeAddresses: { 'zh-TW': '儲存時包含地址', en: 'Include addresses when saving' },
+  viewNearby: { 'zh-TW': '查看附近', en: 'View nearby' },
+  findPlacesWhenOut: { 'zh-TW': '外出時尋找地點', en: 'Find places when you\'re out' },
+  saveForLater: { 'zh-TW': '儲存待訪', en: 'Save for later' },
+  planNextAdventure: { 'zh-TW': '計劃你的下一次美食冒險', en: 'Plan your next food adventure' },
+  sharedCollection: { 'zh-TW': '共享收藏', en: 'Shared collection' },
+  bothSeeAllPlaces: { 'zh-TW': '雙方都能看到所有地點', en: 'Both see all saved places' },
+  friendlyCompetition: { 'zh-TW': '友好競爭', en: 'Friendly competition' },
+  seeWhoFindsMore: { 'zh-TW': '看誰發現更多好店', en: 'See who finds more gems' },
+  foodMemoriesShared: { 'zh-TW': '美食回憶', en: 'Food memories' },
+  buildSharedDiary: { 'zh-TW': '建立你們共同的美食日記', en: 'Build your shared food diary' },
 }
 
 export type TranslationKey = keyof typeof translations

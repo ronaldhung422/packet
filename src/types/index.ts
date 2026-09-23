@@ -11,14 +11,17 @@ export interface Place {
   }
   phone?: string
   category: 'want-to-try' | 'been-there' | 'favorites'
-  placeType?: PlaceType  // 新增：地點類型
+  placeType?: PlaceType
   tags: string[]
-  addedBy: 'ronald' | 'kerry'
+  discoveredBy: 'ronald' | 'kerry'
   addedAt: string
   memories: Memory[]
   visitedAt?: string
   rating?: number
   notes?: string
+  collectionIds: string[]
+  likedBy: ('ronald' | 'kerry')[]
+  coverImage?: string
 }
 
 // 新增：地點類型
@@ -43,7 +46,8 @@ export interface Memory {
 export interface AppState {
   isPaired: boolean
   pairCode?: string
-  partnerName?: 'ronald' | 'kerry'
+  currentUser?: User
+  partnerName?: User
   lastSync: string
   offlineChanges: number
 }
@@ -92,4 +96,38 @@ export interface Translations {
     'zh-TW': string
     'en': string
   }
+}
+
+// User type
+export type User = 'ronald' | 'kerry'
+
+// User Profile
+export interface UserProfile {
+  userId: string
+  displayName: User
+  avatarEmoji: string
+  createdAt: string
+}
+
+// Place Collection (收藏夾)
+export interface PlaceCollection {
+  id: string
+  collectionId: string
+  name: string
+  emoji: string
+  coverImage?: string
+  placeIds: string[]
+  displayOrder: number
+  createdBy: User
+  createdAt: string
+  updatedAt?: string
+}
+
+// Filter type for chips
+export type FilterType = 'all' | 'chinese' | 'cafe' | 'dessert' | 'japanese' | 'bar' | 'travel'
+
+export interface FilterChip {
+  id: FilterType
+  label: string
+  emoji: string
 }

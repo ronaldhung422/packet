@@ -1,89 +1,77 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PlusCircle, MapPin, Star, TrendingUp, Clock } from 'lucide-react'
 import PlaceCard from '../components/PlaceCard'
 import EmptyState from '../components/EmptyState'
+import { FilterChips } from '../components/FilterChips'
+import { PlaceCarousel } from '../components/PlaceCarousel'
+import { CollectionCard } from '../components/CollectionCard'
+import { FAB } from '../components/FAB'
+import { BottomSheet } from '../components/BottomSheet'
 import { useStore } from '../store/useStore'
+import { FilterType } from '../types'
 
 const Home = () => {
-  const { places, stats } = useStore()
-  const recentPlaces = places.slice(0, 3)
+  const { places, stats, collections } = useStore()
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all')
+  const [showAddSheet, setShowAddSheet] = useState(false)
+  
+  const recentPlaces = places.slice(0, 8)
+  
+  const filters = [
+    { id: 'all' as FilterType, emoji: '🍽️', label: '全部' },
+    { id: 'chinese' as FilterType, emoji: '🍜', label: '中餐' },
+    { id: 'cafe' as FilterType, emoji: '☕', label: '咖啡' },
+    { id: 'dessert' as FilterType, emoji: '🍰', label: '甜點' },
+    { id: 'japanese' as FilterType, emoji: '🍣', label: '日式' },
+    { id: 'western' as FilterType, emoji: '🍝', label: '西餐' },
+  ]
+
+  const getPlacesForCollection = (collectionId: string) => {
+    return places.filter(p => p.collectionIds?.includes(collectionId))
+  }
+
+  const getCoverImageForCollection = (collectionId: string) => {
+    const collectionPlaces = getPlacesForCollection(collectionId)
+    return collectionPlaces[0]?.coverImage
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome section */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          歡迎使用 Packet！🍜
-        </h1>
-        <p className="text-gray-600">
-          和另一半一起收藏 Instagram 和 Threads 上的餐廳
-        </p>
-      </div>
+    <div className="space-y-6 pb-20">
+      {/* Filter Chips */}
+      <FilterChips 
+        filters={filters}
+        selected={selectedFilter}
+        onSelect={setSelectedFilter}
+      />
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Link
-          to="/add"
-          className="bg-gradient-to-r from-packet-purple to-packet-pink text-white p-4 rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-shadow"
-        >
-          <PlusCircle className="w-8 h-8 mb-2" />
-          <span className="font-medium">新增地點</span>
-        </Link>
-        
-        <Link
-          to="/map"
-          className="bg-white border border-gray-200 p-4 rounded-xl flex flex-col items-center justify-center hover:shadow-md transition-shadow"
-        >
-          <MapPin className="w-8 h-8 mb-2 text-packet-green" />
-          <span className="font-medium text-gray-700">地圖檢視</span>
-        </Link>
-        
-        <Link
-          to="/places"
-          className="bg-white border border-gray-200 p-4 rounded-xl flex flex-col items-center justify-center hover:shadow-md transition-shadow"
-        >
-          <Star className="w-8 h-8 mb-2 text-packet-yellow" />
-          <span className="font-medium text-gray-700">所有地點</span>
-          <span className="text-sm text-gray-500 mt-1">{stats.totalPlaces} 個</span>
-        </Link>
-        
-        <Link
-          to="/stats"
-          className="bg-white border border-gray-200 p-4 rounded-xl flex flex-col items-center justify-center hover:shadow-md transition-shadow"
-        >
-          <TrendingUp className="w-8 h-8 mb-2 text-blue-600" />
-          <span className="font-medium text-gray-700">統計</span>
-          <span className="text-sm text-gray-500 mt-1">查看數據</span>
-        </Link>
-      </div>
+      {/* Recent Saved Carousel */}
+      {recentPlaces.length > 0 && (
+        <PlaceCarousel 
+          places={recentPlaces}
+          title="最近 Saved"
+        />
+      )}
 
-      {/* Recent places */}
+      {/* Collections Grid */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Clock className="w-5 h-5 text-gray-500" />
-            <h2 className="text-lg font-bold text-gray-900">最近新增</h2>
-          </div>
-          <Link
-            to="/places"
-            className="text-packet-purple hover:text-packet-purple-dark font-medium"
-          >
-            查看全部 →
-          </Link>
-        </div>
-
-        {recentPlaces.length > 0 ? (
-          <div className="space-y-4">
-            {recentPlaces.map((place) => (
-              <PlaceCard key={place.id} place={place} />
+        <h2 className="text-xl font-bold">Collections</h2>
+        {collections.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            {collections.map((collection) => (
+              <CollectionCard
+                key={collection.id}
+                collection={collection}
+                placesCount={getPlacesForCollection(collection.id).length}
+                coverImage={getCoverImageForCollection(collection.id)}
+              />
             ))}
           </div>
         ) : (
           <EmptyState 
             type="places" 
-            title="尚未有地點"
-            description="新增你的第一家餐廳開始使用！"
-            actionLabel="新增第一個地點"
+            title="尚未有收藏夾"
+            description="建立你的第一個收藏夾開始整理餐廳！"
           />
         )}
       </div>
@@ -111,30 +99,65 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Tips */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mt-8">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">💡 如何使用 Packet</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <div className="font-medium text-gray-900">1. 複製連結</div>
-            <div className="text-gray-600 text-sm">
-              從 Instagram 或 Threads 的分享選單複製貼文連結
+      {/* FAB */}
+      <FAB onClick={() => setShowAddSheet(true)} label="新增餐廳" />
+
+      {/* Add Place Bottom Sheet */}
+      <BottomSheet
+        isOpen={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+        title="新增餐廳"
+      >
+        <div className="space-y-3">
+          <Link
+            to="/add"
+            className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-[var(--primary-purple)] hover:bg-[var(--bg-secondary)] transition-all"
+            onClick={() => setShowAddSheet(false)}
+          >
+            <span className="text-2xl">📋</span>
+            <div>
+              <div className="font-medium">貼上 IG/Threads Link</div>
+              <div className="text-sm text-gray-500">自動抓取餐廳資訊</div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <div className="font-medium text-gray-900">2. 貼到這裡</div>
-            <div className="text-gray-600 text-sm">
-              應用程式會自動抓取餐廳名稱和資訊
+          </Link>
+          
+          <Link
+            to="/add?source=instagram"
+            className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-[var(--primary-purple)] hover:bg-[var(--bg-secondary)] transition-all"
+            onClick={() => setShowAddSheet(false)}
+          >
+            <span className="text-2xl">📷</span>
+            <div>
+              <div className="font-medium">從 Instagram 匯入</div>
+              <div className="text-sm text-gray-500">選擇已儲存的貼文</div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <div className="font-medium text-gray-900">3. 儲存並分享</div>
-            <div className="text-gray-600 text-sm">
-              你和另一半都能看到所有儲存的地點
+          </Link>
+          
+          <Link
+            to="/add?source=threads"
+            className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-[var(--primary-purple)] hover:bg-[var(--bg-secondary)] transition-all"
+            onClick={() => setShowAddSheet(false)}
+          >
+            <span className="text-2xl">🧵</span>
+            <div>
+              <div className="font-medium">從 Threads 匯入</div>
+              <div className="text-sm text-gray-500">連結 Threads 帳號</div>
             </div>
-          </div>
+          </Link>
+          
+          <Link
+            to="/add?manual=true"
+            className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-[var(--primary-purple)] hover:bg-[var(--bg-secondary)] transition-all"
+            onClick={() => setShowAddSheet(false)}
+          >
+            <span className="text-2xl">✍️</span>
+            <div>
+              <div className="font-medium">手動輸入</div>
+              <div className="text-sm text-gray-500">自己填寫餐廳資訊</div>
+            </div>
+          </Link>
         </div>
-      </div>
+      </BottomSheet>
     </div>
   )
 }

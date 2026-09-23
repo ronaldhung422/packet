@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS pairs (
     last_sync TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     is_active BOOLEAN DEFAULT TRUE,
     
-    CONSTRAINT pair_code_length CHECK (LENGTH(pair_code) = 12),
+    CONSTRAINT pair_code_length CHECK (LENGTH(pair_code) = 13),
     CONSTRAINT pair_code_format CHECK (pair_code ~ '^PACKET-[A-Z0-9]{6}$')
 );
 

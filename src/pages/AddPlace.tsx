@@ -7,12 +7,13 @@ import { extractionService } from '../services/extraction.service'
 import { useLanguage } from '../contexts/LanguageContext'
 import { translations as t } from '../i18n'
 import { PlaceType } from '../types'
+import { BottomSheet } from '../components/BottomSheet'
 import toast from 'react-hot-toast'
 
 const AddPlace = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { places, addPlace, updatePlace } = useStore()
+  const { places, addPlace, updatePlace, collections } = useStore()
   const { language } = useLanguage()
   const editingPlace = places.find(place => place.id === searchParams.get('edit'))
   
@@ -20,12 +21,14 @@ const AddPlace = () => {
   const [step, setStep] = useState<'link' | 'details'>('link')
   const [link, setLink] = useState('')
   const [platform, setPlatform] = useState<'instagram' | 'threads' | 'manual'>('instagram')
+  const [showCollectionSheet, setShowCollectionSheet] = useState(false)
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([])
   
   const [placeDetails, setPlaceDetails] = useState({
     name: '',
     description: '',
     tags: [] as string[],
-    addedBy: 'ronald' as 'ronald' | 'kerry',
+    discoveredBy: 'ronald' as 'ronald' | 'kerry',
     category: 'want-to-try' as 'want-to-try' | 'been-there' | 'favorites',
     placeType: 'restaurant' as PlaceType,
     location: '',
@@ -43,12 +46,13 @@ const AddPlace = () => {
       name: editingPlace.name,
       description: editingPlace.description || '',
       tags: editingPlace.tags,
-      addedBy: editingPlace.addedBy,
+      discoveredBy: editingPlace.discoveredBy || 'ronald',
       category: editingPlace.category,
       placeType: editingPlace.placeType || 'restaurant',
       location: editingPlace.location?.address || '',
       notes: editingPlace.notes || ''
     })
+    setSelectedCollections(editingPlace.collectionIds || [])
   }, [editingPlace])
 
   const handleLinkSubmit = async (submittedLink: string, submittedPlatform: 'instagram' | 'threads' | 'manual') => {
@@ -108,9 +112,19 @@ const AddPlace = () => {
       return
     }
 
+    if (selectedCollections.length === 0) {
+      toast.error(language === 'zh-TW' ? '請選擇至少一個收藏夾' : 'Please select at least one collection')
+      return
+    }
+
     setIsLoading(true)
 
     try {
+      const allCollection = collections.find(c => c.name === '全部' || c.name === 'All')
+      const finalCollections = allCollection && !selectedCollections.includes(allCollection.id)
+        ? [...selectedCollections, allCollection.id]
+        : selectedCollections
+
       if (editingPlace) {
         updatePlace(editingPlace.id, {
           name: placeDetails.name,
@@ -120,7 +134,8 @@ const AddPlace = () => {
           category: placeDetails.category,
           placeType: placeDetails.placeType,
           tags: placeDetails.tags,
-          addedBy: placeDetails.addedBy,
+          discoveredBy: placeDetails.discoveredBy,
+          collectionIds: finalCollections,
           location: placeDetails.location ? { address: placeDetails.location } : undefined,
           notes: placeDetails.notes
         })
@@ -133,7 +148,9 @@ const AddPlace = () => {
           category: placeDetails.category,
           placeType: placeDetails.placeType,
           tags: placeDetails.tags,
-          addedBy: placeDetails.addedBy,
+          discoveredBy: placeDetails.discoveredBy,
+          collectionIds: finalCollections,
+          likedBy: [],
           memories: [],
           location: placeDetails.location ? { address: placeDetails.location } : undefined,
           notes: placeDetails.notes
@@ -141,7 +158,7 @@ const AddPlace = () => {
       }
 
       toast.success(`${editingPlace ? (language === 'zh-TW' ? '已更新' : 'Updated') : (language === 'zh-TW' ? '已新增' : 'Added')} ${placeDetails.name}!`)
-      navigate('/places')
+      navigate('/')
       
     } catch (error) {
       console.error('Failed to add place:', error)
@@ -373,15 +390,15 @@ const AddPlace = () => {
                   </div>
                 </label>
                 <select
-                  value={placeDetails.addedBy}
+                  value={placeDetails.discoveredBy}
                   onChange={(e) => setPlaceDetails(prev => ({ 
                     ...prev, 
-                    addedBy: e.target.value as 'ronald' | 'kerry' 
+                    discoveredBy: e.target.value as 'ronald' | 'kerry' 
                   }))}
                   className="input"
                 >
-                  <option value="ronald">Ronald 👨‍💻</option>
-                  <option value="kerry">Kerry 👩‍💻</option>
+                  <option value="ronald">Ronald 👨</option>
+                  <option value="kerry">Kerry 👩</option>
                 </select>
               </div>
 
@@ -402,6 +419,34 @@ const AddPlace = () => {
                   <option value="favorites">{t.favorites[language]} ⭐</option>
                 </select>
               </div>
+            </div>
+
+            {/* Collections Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                收藏夾 *
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowCollectionSheet(true)}
+                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-[var(--primary-purple)] hover:bg-[var(--bg-secondary)] transition-all text-left"
+              >
+                {selectedCollections.length === 0 ? (
+                  <div className="text-gray-500">點擊選擇收藏夾</div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCollections.map(collectionId => {
+                      const collection = collections.find(c => c.id === collectionId)
+                      return collection ? (
+                        <div key={collectionId} className="px-3 py-1 bg-[var(--primary-purple)] text-white rounded-full text-sm flex items-center gap-2">
+                          <span>{collection.emoji}</span>
+                          <span>{collection.name}</span>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                )}
+              </button>
             </div>
 
             <div>
@@ -445,7 +490,7 @@ const AddPlace = () => {
             </button>
             <button
               type="submit"
-              disabled={isLoading || !placeDetails.name.trim()}
+              disabled={isLoading || !placeDetails.name.trim() || selectedCollections.length === 0}
               className="flex-1 btn btn-primary py-3 text-base font-medium"
             >
               {isLoading ? (language === 'zh-TW' ? '儲存中...' : 'Saving...') : (language === 'zh-TW' ? '儲存地點' : 'Save Place')}
@@ -453,6 +498,54 @@ const AddPlace = () => {
           </div>
         </form>
       )}
+
+      {/* Collection Selection Sheet */}
+      <BottomSheet
+        isOpen={showCollectionSheet}
+        onClose={() => setShowCollectionSheet(false)}
+        title="選擇收藏夾"
+      >
+        <div className="space-y-2">
+          {collections.filter(c => c.name !== '全部' && c.name !== 'All').map(collection => (
+            <button
+              key={collection.id}
+              type="button"
+              onClick={() => {
+                setSelectedCollections(prev => 
+                  prev.includes(collection.id)
+                    ? prev.filter(id => id !== collection.id)
+                    : [...prev, collection.id]
+                )
+              }}
+              className={`flex items-center gap-3 w-full p-4 rounded-xl border-2 transition-all text-left ${
+                selectedCollections.includes(collection.id)
+                  ? 'border-[var(--primary-purple)] bg-[var(--bg-secondary)]'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className="text-2xl">{collection.emoji}</span>
+              <div className="flex-1">
+                <div className="font-medium">{collection.name}</div>
+                <div className="text-sm text-gray-500">
+                  {places.filter(p => p.collectionIds?.includes(collection.id)).length} 個餐廳
+                </div>
+              </div>
+              {selectedCollections.includes(collection.id) && (
+                <div className="w-6 h-6 rounded-full bg-[var(--primary-purple)] text-white flex items-center justify-center text-sm">
+                  ✓
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowCollectionSheet(false)}
+          className="w-full mt-4 py-3 btn btn-primary"
+        >
+          完成
+        </button>
+      </BottomSheet>
     </div>
   )
 }

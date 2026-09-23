@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Heart, MapPin, Calendar, Star, MoreVertical, ExternalLink, Trash2, Plus, Map } from 'lucide-react'
 import { Place } from '../types'
 import { formatDistanceToNow } from 'date-fns'
 import { useStore } from '../store/useStore'
+import { AvatarBadge } from './AvatarBadge'
 
 interface PlaceCardProps {
   place: Place
@@ -17,10 +19,13 @@ const categoryLabels: Record<Place['category'], string> = {
 }
 
 const PlaceCard = ({ place, onEdit, onDelete }: PlaceCardProps) => {
+  const navigate = useNavigate()
   const [showMenu, setShowMenu] = useState(false)
   const [showMemoryForm, setShowMemoryForm] = useState(false)
   const [memoryText, setMemoryText] = useState('')
-  const { setCategory, addMemory } = useStore()
+  const { setCategory, addMemory, toggleLike, currentUser } = useStore()
+
+  const isLiked = place.likedBy?.includes(currentUser) || false
 
   const categoryClass = {
     'want-to-try': 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -48,16 +53,74 @@ const PlaceCard = ({ place, onEdit, onDelete }: PlaceCardProps) => {
     }
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on interactive elements
+    if ((e.target as HTMLElement).closest('button, a, input')) {
+      return
+    }
+    navigate(`/place/${place.id}`)
+  }
+
   const mapsUrl = getGoogleMapsUrl()
 
   return (
-    <article className="card group">
+    <article 
+      className="card group cursor-pointer hover:shadow-lg transition-shadow" 
+      onClick={handleCardClick}
+    >
+      {/* Cover Image */}
+      {place.coverImage && (
+        <div className="relative -mx-4 -mt-4 mb-4 h-48 overflow-hidden rounded-t-2xl">
+          <img 
+            src={place.coverImage} 
+            alt={place.name}
+            className="h-full w-full object-cover"
+          />
+          {/* Avatar Badge overlay */}
+          <div className="absolute bottom-2 left-2">
+            <AvatarBadge user={place.discoveredBy} size="md" />
+          </div>
+          {/* Like button overlay */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleLike(place.id)
+            }}
+            className="absolute bottom-2 right-2 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-transform hover:scale-110"
+            aria-label={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart 
+              size={20} 
+              className={isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}
+            />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 truncate">{place.name}</h3>
+          <div className="flex items-center gap-2">
+            {!place.coverImage && <AvatarBadge user={place.discoveredBy} size="sm" />}
+            <h3 className="text-lg font-semibold text-gray-900 truncate">{place.name}</h3>
+          </div>
           {place.description && <p className="mt-1 text-sm text-gray-600 line-clamp-2">{place.description}</p>}
         </div>
-        <div className="relative shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {!place.coverImage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleLike(place.id)
+              }}
+              className="icon-button"
+              aria-label={isLiked ? 'Unlike' : 'Like'}
+            >
+              <Heart 
+                size={18} 
+                className={isLiked ? 'fill-red-500 text-red-500' : 'text-gray-500'}
+              />
+            </button>
+          )}
           <button onClick={() => setShowMenu(!showMenu)} className="icon-button" aria-label={`Actions for ${place.name}`}>
             <MoreVertical className="h-5 w-5 text-gray-500" />
           </button>
@@ -90,7 +153,12 @@ const PlaceCard = ({ place, onEdit, onDelete }: PlaceCardProps) => {
           {place.location?.address && <span className="flex min-w-0 items-center gap-1 truncate"><MapPin className="h-4 w-4 shrink-0" />{place.location.address}</span>}
           <span className="flex shrink-0 items-center gap-1"><Calendar className="h-4 w-4" />{formatDistanceToNow(new Date(place.addedAt), { addSuffix: true })}</span>
         </div>
-        <span className={place.addedBy === 'ronald' ? 'text-blue-600' : 'text-pink-600'}>{place.addedBy === 'ronald' ? 'Ronald' : 'Kerry'}</span>
+        {place.likedBy && place.likedBy.length > 0 && (
+          <span className="flex shrink-0 items-center gap-1 text-red-500">
+            <Heart className="h-4 w-4 fill-current" />
+            {place.likedBy.length}
+          </span>
+        )}
       </div>
 
       {place.rating && <div className="mt-2 flex items-center gap-1">{[1, 2, 3, 4, 5].map(i => <Star key={i} className={`h-4 w-4 ${i <= place.rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />)}</div>}
@@ -120,3 +188,4 @@ const PlaceCard = ({ place, onEdit, onDelete }: PlaceCardProps) => {
 }
 
 export default PlaceCard
+export { PlaceCard }

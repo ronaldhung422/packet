@@ -5,6 +5,8 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import AddPlace from './pages/AddPlace'
 import Places from './pages/Places'
+import PlaceDetail from './pages/PlaceDetail'
+import CollectionDetail from './pages/CollectionDetail'
 import MapView from './pages/MapView'
 import Stats from './pages/Stats'
 import Pairing from './pages/Pairing'
@@ -122,6 +124,8 @@ function App() {
               <Route index element={<Home />} />
               <Route path="add" element={<AddPlace />} />
               <Route path="places" element={<Places />} />
+              <Route path="place/:id" element={<PlaceDetail />} />
+              <Route path="collection/:id" element={<CollectionDetail />} />
               <Route path="map" element={<MapView />} />
               <Route path="stats" element={<Stats />} />
               <Route path="pair" element={<Pairing />} />
@@ -151,15 +155,6 @@ function App() {
             </div>
           </div>
         )}
-
-        {/* Offline Indicator */}
-        <div className="fixed top-4 right-4 z-40">
-          {!navigator.onLine && (
-            <div className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
-              Offline
-            </div>
-          )}
-        </div>
       </div>
     </Router>
     </LanguageProvider>

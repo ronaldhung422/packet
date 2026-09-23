@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Menu, Bell, Settings } from 'lucide-react'
+import { Menu, Settings } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
 const Header = () => {
@@ -38,24 +38,6 @@ const Header = () => {
 
           {/* Right side - Actions */}
           <div className="flex items-center space-x-3">
-            {/* Sync indicator */}
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${navigator.onLine ? 'bg-green-500' : 'bg-gray-400'}`} />
-                <span className="text-sm text-gray-600">
-                  {navigator.onLine ? 'Online' : 'Offline'}
-                </span>
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-              <Bell className="w-5 h-5 text-gray-700" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                0
-              </span>
-            </button>
-
             {/* Settings */}
             <Link
               to="/settings"

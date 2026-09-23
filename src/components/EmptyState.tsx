@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { UtensilsCrossed, MapPin, Heart, Users } from 'lucide-react'
+import { useLanguage } from '../contexts/LanguageContext'
+import { translations as t } from '../i18n'
 
 interface EmptyStateProps {
   type: 'places' | 'map' | 'memories' | 'pairing'
@@ -16,41 +18,43 @@ const EmptyState = ({
   actionLabel, 
   actionPath = '/add' 
 }: EmptyStateProps) => {
+  const { language } = useLanguage()
+  
   const getConfig = () => {
     switch (type) {
       case 'places':
         return {
           icon: UtensilsCrossed,
-          defaultTitle: 'No places yet',
-          defaultDescription: 'Start by adding your first restaurant from Instagram or Threads',
-          defaultAction: 'Add First Place',
+          defaultTitle: t.noPlacesYetEmpty[language],
+          defaultDescription: t.startByAdding[language],
+          defaultAction: t.emptyStateAddFirstPlace[language],
           color: 'text-packet-purple',
           bgColor: 'bg-purple-50'
         }
       case 'map':
         return {
           icon: MapPin,
-          defaultTitle: 'No locations yet',
-          defaultDescription: 'Add places with locations to see them on the map',
-          defaultAction: 'Add Place',
+          defaultTitle: t.noLocationsYet[language],
+          defaultDescription: t.addPlacesWithLocations[language],
+          defaultAction: t.addPlace[language],
           color: 'text-packet-green',
           bgColor: 'bg-green-50'
         }
       case 'memories':
         return {
           icon: Heart,
-          defaultTitle: 'No memories yet',
-          defaultDescription: 'Add memories to your visited places to create your food diary',
-          defaultAction: 'Browse Places',
+          defaultTitle: t.noMemoriesYet[language],
+          defaultDescription: t.addMemoriesToPlaces[language],
+          defaultAction: t.browsePlaces[language],
           color: 'text-packet-pink',
           bgColor: 'bg-pink-50'
         }
       case 'pairing':
         return {
           icon: Users,
-          defaultTitle: 'Not paired yet',
-          defaultDescription: 'Pair with your partner to share your food discoveries',
-          defaultAction: 'Pair Now',
+          defaultTitle: t.notPairedYetEmpty[language],
+          defaultDescription: t.pairWithPartnerToShare[language],
+          defaultAction: t.pairNowAction[language],
           color: 'text-blue-600',
           bgColor: 'bg-blue-50'
         }
@@ -85,21 +89,21 @@ const EmptyState = ({
 
       {/* Tips based on type */}
       <div className="mt-10 pt-8 border-t border-gray-200">
-        <h4 className="text-sm font-medium text-gray-700 mb-4">Quick tips:</h4>
+        <h4 className="text-sm font-medium text-gray-700 mb-4">{t.quickTips[language]}</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
           {type === 'places' && (
             <>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📱 Copy from Instagram</div>
-                <div>Tap share → Copy link</div>
+                <div className="font-medium mb-1">📱 {t.copyFromInstagram[language]}</div>
+                <div>{t.tapShareCopyLink[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🔗 Paste here</div>
-                <div>App extracts restaurant info</div>
+                <div className="font-medium mb-1">🔗 {t.pasteHere[language]}</div>
+                <div>{t.appExtractsInfo[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📝 Add manually</div>
-                <div>Type name if extraction fails</div>
+                <div className="font-medium mb-1">📝 {t.addManually[language]}</div>
+                <div>{t.typeNameIfFails[language]}</div>
               </div>
             </>
           )}
@@ -107,16 +111,16 @@ const EmptyState = ({
           {type === 'map' && (
             <>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📍 Add locations</div>
-                <div>Include addresses when saving</div>
+                <div className="font-medium mb-1">📍 {t.addLocations[language]}</div>
+                <div>{t.includeAddresses[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🗺️ View nearby</div>
-                <div>Find places when you're out</div>
+                <div className="font-medium mb-1">🗺️ {t.viewNearby[language]}</div>
+                <div>{t.findPlacesWhenOut[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📌 Save for later</div>
-                <div>Plan your next food adventure</div>
+                <div className="font-medium mb-1">📌 {t.saveForLater[language]}</div>
+                <div>{t.planNextAdventure[language]}</div>
               </div>
             </>
           )}
@@ -124,16 +128,16 @@ const EmptyState = ({
           {type === 'pairing' && (
             <>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">👫 Shared collection</div>
-                <div>Both see all saved places</div>
+                <div className="font-medium mb-1">👫 {t.sharedCollection[language]}</div>
+                <div>{t.bothSeeAllPlaces[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🏆 Friendly competition</div>
-                <div>See who finds more gems</div>
+                <div className="font-medium mb-1">🏆 {t.friendlyCompetition[language]}</div>
+                <div>{t.seeWhoFindsMore[language]}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">💝 Food memories</div>
-                <div>Build your shared food diary</div>
+                <div className="font-medium mb-1">💝 {t.foodMemoriesShared[language]}</div>
+                <div>{t.buildSharedDiary[language]}</div>
               </div>
             </>
           )}
