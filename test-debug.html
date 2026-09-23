@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram 抓取測試（顯示完整過程）</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0F172A;
+      color: #F8FAFC;
+    }
+    h1 { color: #38BDF8; }
+    button {
+      background: #F97316;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    button:hover { background: #EA580C; }
+    #log {
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .log-line {
+      margin: 4px 0;
+      padding: 4px;
+    }
+    .log-info { color: #38BDF8; }
+    .log-success { color: #22C55E; }
+    .log-error { color: #EF4444; }
+    .log-data { 
+      color: #A78BFA;
+      margin-left: 20px;
+      font-size: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #1E293B;
+      color: #F8FAFC;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Instagram 抓取測試</h1>
+  
+  <label>Instagram 連結：</label>
+  <input 
+    type="text" 
+    id="urlInput" 
+    value="https://www.instagram.com/reel/Dc_Ca43KO06/"
+    placeholder="貼上 Instagram 連結"
+  />
+  
+  <button onclick="testExtraction()">🚀 開始測試</button>
+  
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    
+    function log(message, type = 'info') {
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    function logData(label, data) {
+      const line = document.createElement('div');
+      line.className = 'log-line log-data';
+      line.textContent = `${label}: ${JSON.stringify(data, null, 2)}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    async function testExtraction() {
+      logEl.innerHTML = '';
+      const url = document.getElementById('urlInput').value.trim();
+      
+      if (!url) {
+        log('請輸入 Instagram 連結', 'error');
+        return;
+      }
+      
+      log('開始抓取...', 'info');
+      log(`連結: ${url}`, 'info');
+      
+      try {
+        // 建構 API URL
+        const apiUrl = `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?url_embed_safe=true&code_or_url=${encodeURIComponent(url)}`;
+        log('API URL 建構完成', 'success');
+        
+        // 呼叫 API
+        log('正在呼叫 RapidAPI...', 'info');
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
+            'x-rapidapi-key': 'ca3e8ce95cmsh8f0a123057ce6f9p165924jsn26410f3a065c'
+          }
+        });
+        
+        log(`HTTP 狀態: ${response.status}`, response.ok ? 'success' : 'error');
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          log('API 回應錯誤', 'error');
+          logData('錯誤內容', errorText);
+          return;
+        }
+        
+        // 解析 JSON
+        log('解析回應資料...', 'info');
+        const result = await response.json();
+        
+        if (!result.data) {
+          log('❌ 回應中沒有 data 欄位', 'error');
+          logData('完整回應', result);
+          return;
+        }
+        
+        log('✅ 成功取得資料！', 'success');
+        
+        // 提取資訊
+        const data = result.data;
+        const restaurantName = data.location?.name || '';
+        const address = data.location?.address || '';
+        const caption = data.caption?.text || '';
+        const image = data.thumbnail_url_original || data.thumbnail_url || '';
+        
+        log('━━━━━━━━━━━━━━━━━━━━━━', 'success');
+        log('📍 提取結果：', 'success');
+        log(`餐廳名稱: ${restaurantName || '(未找到)'}`, restaurantName ? 'success' : 'error');
+        log(`地址: ${address || '(未找到)'}`, address ? 'success' : 'error');
+        log(`文字長度: ${caption.length} 字元`, 'info');
+        log(`有圖片: ${image ? '✅' : '❌'}`, image ? 'success' : 'error');
+        log('━━━━━━━━━━━━━━━━━━━━━━', 'success');
+        
+        // 顯示完整 caption
+        if (caption) {
+          logData('完整文字', caption.substring(0, 200) + (caption.length > 200 ? '...' : ''));
+        }
+        
+        // 顯示原始 location 資料
+        if (data.location) {
+          logData('Location 原始資料', data.location);
+        }
+        
+        log('✅ 測試完成', 'success');
+        
+      } catch (error) {
+        log(`❌ 發生錯誤: ${error.message}`, 'error');
+        logData('錯誤詳情', error.stack);
+      }
+    }
+    
+    // 自動開始測試
+    setTimeout(() => {
+      log('頁面載入完成，準備測試', 'info');
+    }, 100);
+  </script>
+</body>
+</html>

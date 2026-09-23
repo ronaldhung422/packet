@@ -1,0 +1,85 @@
+🚀 Packet 快速部署指南
+================================
+
+📋 已完成的工作：
+1. ✅ 完整项目代码 (React + TypeScript + PWA)
+2. ✅ 所有页面组件 (首页、添加、地图、统计、配对)
+3. ✅ 数据库架构 (Supabase)
+4. ✅ 部署配置 (Vercel)
+5. ✅ 测试指南 (iPhone Safari)
+
+🎯 现在需要你完成的 3 个步骤：
+
+步骤 1: 设置 Supabase (免费)
+--------------------------------
+1. 访问: https://app.supabase.com
+2. 点击 "New Project"
+3. 输入:
+   - Name: packet-app
+   - Database Password: [生成强密码]
+   - Region: 选择离你最近的地区
+4. 点击 "Create new project"
+5. 项目创建后，进入 Settings → API
+6. 复制:
+   - Project URL: https://[项目ID].supabase.co
+   - anon/public key: 公钥
+
+步骤 2: 设置 Cloudflare Worker (免费)
+-----------------------------------------
+1. 访问: https://dash.cloudflare.com
+2. Workers & Pages → Create application
+3. 点击 "Create Worker"
+4. Name: packet-extraction-worker
+5. 点击 "Deploy"
+6. 进入 Workers → packet-extraction-worker → Edit code
+7. 复制文件内容: workers/extraction-worker/src/index.js
+8. 粘贴并点击 "Save and Deploy"
+9. 记下 Worker URL: https://packet-extraction-worker.[用户名].workers.dev
+
+步骤 3: 部署到 Vercel (免费)
+-------------------------------
+选项 A: 使用 Vercel 控制台 (推荐)
+1. 访问: https://vercel.com
+2. 点击 "Add New" → "Project"
+3. 如果没有 GitHub 仓库:
+   - 下载本项目 ZIP
+   - 拖拽到 Vercel 上传区域
+4. 配置:
+   - Framework Preset: Vite
+   - Root Directory: .
+   - Build Command: npm run build
+   - Output Directory: dist
+5. 添加环境变量:
+   - VITE_SUPABASE_URL = 你的Supabase URL
+   - VITE_SUPABASE_ANON_KEY = 你的匿名密钥
+   - VITE_EXTRACTION_WORKER_URL = 你的Worker URL
+6. 点击 "Deploy"
+
+选项 B: 使用 Vercel CLI
+1. 安装: npm install -g vercel
+2. 登录: vercel login
+3. 部署: vercel
+4. 生产环境: vercel --prod
+
+📱 部署后测试:
+1. 访问你的部署 URL (如: https://packet.vercel.app)
+2. 在 iPhone Safari 中测试 PWA 安装
+3. 测试 Instagram 链接提取
+4. 测试设备配对功能
+
+🔧 环境变量总结:
+VITE_SUPABASE_URL=https://你的项目.supabase.co
+VITE_SUPABASE_ANON_KEY=你的匿名密钥
+VITE_EXTRACTION_WORKER_URL=https://你的worker.workers.dev
+
+📞 需要帮助?
+- 查看 DEPLOYMENT.md (详细部署指南)
+- 查看 IPHONE_TESTING.md (iPhone测试指南)
+- 查看 README.md (项目说明)
+
+💰 成本: $0/月 (全部使用免费套餐)
+
+🎉 完成部署后，你和 Kerry 就可以开始使用 Packet 了！
+
+创建时间: 2026年9月22日
+项目状态: 准备部署

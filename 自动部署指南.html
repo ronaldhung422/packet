@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packet 自动部署指南</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .step:hover {
+            transform: translateY(-2px);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: white;
+            color: #8b5cf6;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        .step-title {
+            display: inline-block;
+            font-size: 24px;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+        
+        .step-content {
+            margin-top: 20px;
+            padding-left: 55px;
+        }
+        
+        .step-desc {
+            font-size: 16px;
+            margin-bottom: 15px;
+            opacity: 0.95;
+        }
+        
+        .action-button {
+            display: inline-block;
+            background: white;
+            color: #8b5cf6;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .action-button:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+        }
+        
+        .env-vars {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .completed-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        
+        .completed-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .completed-list li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        
+        .note {
+            background: rgba(245, 158, 11, 0.2);
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            color: #fbbf24;
+            margin-bottom: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 28px;
+            }
+            
+            .step-content {
+                padding-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">📱</div>
+            <h1>Packet 自动部署指南</h1>
+            <p class="subtitle">情侣美食发现 PWA - 零成本部署</p>
+            <div class="status-badge">✅ 项目代码准备就绪</div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">项目状态检查</div>
+            <div class="step-content">
+                <div class="step-desc">Packet 已完全开发完成，包含：</div>
+                <ul class="completed-list">
+                    <li>React TypeScript + Vite 项目结构</li>
+                    <li>PWA 配置（iPhone Safari 优化）</li>
+                    <li>所有页面组件（首页、添加、地图、统计、配对）</li>
+                    <li>Supabase 数据库架构</li>
+                    <li>Instagram 链接提取服务</li>
+                    <li>设备配对系统（二维码）</li>
+                    <li>完整的部署配置</li>
+                </ul>
+                <div class="note">
+                    <div class="note-title">注意</div>
+                    <div>项目代码已完全准备好，你现在只需要设置3个免费服务即可部署。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">设置 Supabase（数据库）</div>
+            <div class="step-content">
+                <div class="step-desc">Supabase 提供免费 PostgreSQL 数据库和实时同步功能：</div>
+                <ol style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>访问 <a href="https://app.supabase.com" style="color: #fbbf24; text-decoration: none;">https://app.supabase.com</a></li>
+                    <li>点击 "New Project"</li>
+                    <li>输入项目名称: <strong>packet-app</strong></li>
+                    <li>设置数据库密码</li>
+                    <li>选择离你最近的地区</li>
+                    <li>点击 "Create new project"</li>
+                    <li>等待项目创建完成</li>
+                    <li>进入 Settings → API，复制：
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Project URL</li>
+                            <li>anon/public key</li>
+                        </ul>
+                    </li>
+                </ol>
+                <a href="https://app.supabase.com" target="_blank" class="action-button">🚀 前往 Supabase</a>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">设置 Cloudflare Worker</div>
+            <div class="step-content">
+                <div class="step-desc">Cloudflare Worker 用于 Instagram 链接提取（绕过 API 限制）：</div>
+                <ol style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>访问 <a href="https://dash.cloudflare.com" style="color: #fbbf24; text-decoration: none;">https://dash.cloudflare.com</a></li>
+                    <li>Workers & Pages → Create application</li>
+                    <li>点击 "Create Worker"</li>
+                    <li>名称: <strong>packet-extraction-worker</strong></li>
+                    <li>点击 "Deploy"</li>
+                    <li>进入 Workers → 你的 Worker → Edit code</li>
+                    <li>复制文件内容：<code>workers/extraction-worker/src/index.js</code></li>
+                    <li>粘贴并点击 "Save and Deploy"</li>
+                    <li>记下 Worker URL</li>
+                </ol>
+                <a href="https://dash.cloudflare.com" target="_blank" class="action-button">⚡ 前往 Cloudflare</a>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">部署到 Vercel</div>
+            <div class="step-content">
+                <div class="step-desc">Vercel 提供免费的静态网站托管和全球 CDN：</div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px; color: #fbbf24;">选项 A：使用 Vercel 控制台（推荐）</h3>
+                    <ol style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>访问 <a href="https://vercel.com" style="color: #fbbf24; text-decoration: none;">https://vercel.com</a></li>
+                        <li>点击 "Add New" → "Project"</li>
+                        <li>如果没有 GitHub 仓库，直接上传项目文件夹</li>
+                        <li>配置：Framework Preset = Vite</li>
+                        <li>添加环境变量（见下方）</li>
+                        <li>点击 "Deploy"</li>
+                    </ol>
+                </div>
+                
+                <div>
+                    <h3 style="margin-bottom: 10px; color: #fbbf24;">选项 B：使用 Vercel CLI</h3>
+                    <pre style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+npm install -g vercel
+vercel login
+vercel
+vercel --prod</pre>
+                </div>
+                
+                <a href="https://vercel.com" target="_blank" class="action-button">🌐 前往 Vercel</a>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-title">环境变量配置</div>
+            <div class="step-content">
+                <div class="step-desc">在 Vercel 部署时，需要设置以下环境变量：</div>
+                <div class="env-vars">
+VITE_SUPABASE_URL=https://你的项目.supabase.co<br>
+VITE_SUPABASE_ANON_KEY=你的匿名密钥<br>
+VITE_EXTRACTION_WORKER_URL=https://packet-extraction-worker.你的用户名.workers.dev
+                </div>
+                <div class="note">
+                    <div class="note-title">重要提示</div>
+                    <div>这些变量必须正确设置，否则应用无法连接到数据库和提取服务。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">6</div>
+            <div class="step-title">测试与使用</div>
+            <div class="step-content">
+                <div class="step-desc">部署完成后，进行以下测试：</div>
+                <ol style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>访问你的部署 URL（如：https://packet.vercel.app）</li>
+                    <li>在 iPhone Safari 中：
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>点击分享按钮 (📤)</li>
+                            <li>选择"添加到主屏幕"</li>
+                            <li>确认安装</li>
+                        </ul>
+                    </li>
+                    <li>测试 Instagram 链接提取</li>
+                    <li>测试设备配对功能</li>
+                    <li>与 Kerry 分享使用</li>
+                </ol>
+                <div class="note">
+                    <div class="note-title">成本说明</div>
+                    <div>✅ 全部免费：Vercel + Supabase + Cloudflare 都使用免费套餐，月费 $0。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <h2 style="margin-bottom: 20px; color: #fbbf24;">🎉 开始部署吧！</h2>
+            <p style="margin-bottom: 20px; opacity: 0.9;">按照上述步骤，大约30分钟即可完成全部部署。</p>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="https://app.supabase.com" target="_blank" class="action-button">第1步：Supabase</a>
+                <a href="https://dash.cloudflare.com" target="_blank" class="action-button">第2步：Cloudflare</a>
+                <a href="https://vercel.com" target="_blank" class="action-button">第3步：Vercel</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Packet - 情侣美食发现 PWA</p>
+            <p>部署指南生成时间：2026年9月22日</p>
+            <p>项目状态：✅ 代码完成 | 🚀 准备部署</p>
+        </div>
+    </div>
+    
+    <script>
+        // 简单的交互功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const steps = document.querySelectorAll('.step');
+            
+            steps.forEach(step => {
+                step.addEventListener('click', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 300);
+                });
+            });
+            
+            // 复制环境变量
+            const copyEnvVars = document.createElement('button');
+            copyEnvVars.textContent = '📋 复制环境变量';
+            copyEnvVars.className = 'action-button';
+            copyEnvVars.style.marginLeft = '10px';
+            copyEnvVars.style.marginTop = '10px';
+            
+            copyEnvVars.addEventListener('click', function() {
+                const envText = `VITE_SUPABASE_URL=https://你的项目.supabase.co\nVITE_SUPABASE_ANON_KEY=你的匿名密钥\nVITE_EXTRACTION_WORKER_URL=https://packet-extraction-worker.你的用户名.workers.dev`;
+                
+                navigator.clipboard.writeText(envText).then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = '✅ 已复制！';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                });
+            });
+            
+            document.querySelector('.env-vars').parentNode.appendChild(copyEnvVars);
+        });
+    </script>
+</body>
+</html>

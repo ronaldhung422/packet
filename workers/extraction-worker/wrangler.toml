@@ -1,0 +1,7 @@
+name = "packetproxy"
+main = "src/index.js"
+compatibility_date = "2024-08-01"
+
+[vars]
+EXTRACTION_CACHE_TTL = "3600"
+MAX_BODY_SIZE = "1048576"

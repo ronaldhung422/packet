@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  /* iOS Safari specific fixes */
+  input, textarea, select, button {
+    @apply text-base;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-packet-purple text-white hover:bg-packet-purple-dark focus:ring-packet-purple;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-300;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-packet-purple focus:border-transparent;
+  }
+
+  /* PWA installation prompt */
+  .pwa-install-prompt {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50;
+  }
+
+  /* Loading animations */
+  .loading-pulse {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+
+  /* Swipeable list item */
+  .swipeable-item {
+    @apply relative overflow-hidden touch-pan-y;
+  }
+}
+
+/* Leaflet map fixes for PWA */
+.leaflet-container {
+  @apply w-full h-full z-0;
+}
+
+/* iOS safe areas */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Press effect for mobile */
+.press-effect:active {
+  transform: scale(0.95);
+}

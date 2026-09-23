@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test RapidAPI from Browser</title>
+</head>
+<body>
+  <h1>Testing Instagram Scraper API</h1>
+  <button onclick="testAPI()">Test API</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function testAPI() {
+      const resultEl = document.getElementById('result');
+      resultEl.textContent = 'Loading...';
+      
+      try {
+        const url = 'https://www.instagram.com/reel/Dc_Ca43KO06/';
+        const apiUrl = `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?url_embed_safe=true&code_or_url=${encodeURIComponent(url)}`;
+        
+        console.log('Calling API:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
+            'x-rapidapi-key': 'ca3e8ce95cmsh8f0a123057ce6f9p165924jsn26410f3a065c'
+          }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          resultEl.textContent = `Error: ${response.status}\n${errorText}`;
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('Data:', data);
+        
+        if (data.data) {
+          const result = {
+            'Location Name': data.data.location?.name,
+            'Location Address': data.data.location?.address,
+            'Caption (first 100 chars)': data.data.caption?.text?.substring(0, 100)
+          };
+          resultEl.textContent = JSON.stringify(result, null, 2);
+        } else {
+          resultEl.textContent = 'No data.data found:\n' + JSON.stringify(data, null, 2).substring(0, 500);
+        }
+        
+      } catch (error) {
+        console.error('Error:', error);
+        resultEl.textContent = 'Error: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

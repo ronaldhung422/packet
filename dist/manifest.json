@@ -1,0 +1,107 @@
+{
+  "name": "Packet - Couples Food Discovery",
+  "short_name": "Packet",
+  "description": "Bookmark restaurants from Instagram & Threads with your partner",
+  "theme_color": "#8b5cf6",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "id": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/iphone-1.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home screen with places list"
+    },
+    {
+      "src": "/screenshots/iphone-2.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Adding a new restaurant"
+    },
+    {
+      "src": "/screenshots/iphone-3.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Map view of saved places"
+    }
+  ],
+  "categories": ["food", "lifestyle", "social"],
+  "shortcuts": [
+    {
+      "name": "Add New Place",
+      "short_name": "Add",
+      "description": "Add a new restaurant from Instagram or Threads",
+      "url": "/add",
+      "icons": [{ "src": "/icon-add.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "View Places",
+      "short_name": "Places",
+      "description": "Browse your saved restaurants",
+      "url": "/places",
+      "icons": [{ "src": "/icon-places.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Map View",
+      "short_name": "Map",
+      "description": "See saved places on a map",
+      "url": "/map",
+      "icons": [{ "src": "/icon-map.png", "sizes": "96x96" }]
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+packet",
+      "url": "/add?link=%s"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e10b-48c8-9c8e",
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "name",
+      "text": "description",
+      "url": "link"
+    }
+  },
+  "display_override": ["standalone", "minimal-ui"],
+  "edge_side_panel": {
+    "preferred_width": 360
+  }
+}
