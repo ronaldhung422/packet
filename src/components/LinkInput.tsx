@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { Link, Instagram, Globe, AlertCircle, Check, X, Loader } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useLanguage } from '../contexts/LanguageContext'
+import { translations as t } from '../i18n'
 
 interface LinkInputProps {
   onLinkSubmit: (link: string, platform: 'instagram' | 'threads' | 'manual') => void
@@ -13,6 +15,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
   const [link, setLink] = useState(initialValue)
   const [platform, setPlatform] = useState<'instagram' | 'threads' | 'manual'>('instagram')
   const inputRef = useRef<HTMLInputElement>(null)
+  const { language } = useLanguage()
 
   const validateLink = (url: string): boolean => {
     try {
@@ -45,12 +48,12 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
     e.preventDefault()
     
     if (!link.trim()) {
-      toast.error('Please enter a link')
+      toast.error(t.pleaseEnterLink[language])
       return
     }
 
     if (!validateLink(link)) {
-      toast.error('Please enter a valid Instagram or Threads link')
+      toast.error(t.pleaseEnterValidLink[language])
       return
     }
 
@@ -68,7 +71,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
       }
     } catch (error) {
       console.error('Failed to read clipboard:', error)
-      toast.error('Unable to access clipboard')
+      toast.error(t.unableToAccessClipboard[language])
     }
   }
 
@@ -95,18 +98,18 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
       case 'threads':
         return 'Threads'
       case 'manual':
-        return 'Manual entry'
+        return t.manualEntry[language]
     }
   }
 
   const getPlaceholder = () => {
     switch (platform) {
       case 'instagram':
-        return 'Paste Instagram post link...'
+        return t.pasteInstagramLink[language]
       case 'threads':
-        return 'Paste Threads post link...'
+        return t.pasteThreadsLink[language]
       case 'manual':
-        return 'Enter restaurant name or any link...'
+        return t.enterRestaurantName[language]
     }
   }
 
@@ -123,7 +126,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
           {platform === 'manual' && (
             <div className="flex items-center space-x-1 text-yellow-600 text-sm">
               <AlertCircle className="w-4 h-4" />
-              <span>Manual entry mode</span>
+              <span>{t.manualEntryMode[language]}</span>
             </div>
           )}
         </div>
@@ -168,7 +171,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
               className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md font-medium"
               disabled={isLoading}
             >
-              Paste
+              {t.paste[language]}
             </button>
           </div>
         </div>
@@ -177,15 +180,15 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
         <div className="text-sm text-gray-600 space-y-2">
           <div className="flex items-start space-x-2">
             <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-            <span>Copy link from Instagram or Threads post</span>
+            <span>{t.copyLinkFromInstagram[language]}</span>
           </div>
           <div className="flex items-start space-x-2">
             <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-            <span>App will try to extract restaurant name automatically</span>
+            <span>{t.appWillExtract[language]}</span>
           </div>
           <div className="flex items-start space-x-2">
             <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-            <span>You can always type the name manually if needed</span>
+            <span>{t.canTypeManually[language]}</span>
           </div>
         </div>
 
@@ -199,12 +202,12 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
             {isLoading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                <span>Processing...</span>
+                <span>{t.processing[language]}</span>
               </>
             ) : (
               <>
                 <Check className="w-5 h-5" />
-                <span>Add Place</span>
+                <span>{t.addPlace[language]}</span>
               </>
             )}
           </button>
@@ -216,14 +219,14 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
               disabled={isLoading}
               className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t.cancel[language]}
             </button>
           )}
         </div>
 
         {/* Quick examples */}
         <div className="pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Example links:</p>
+          <p className="text-sm text-gray-600 mb-2">{t.exampleLinks[language]}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <button
               type="button"
@@ -233,7 +236,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
               }}
               className="text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm"
             >
-              <div className="font-medium">Instagram Post</div>
+              <div className="font-medium">{t.instagramPost[language]}</div>
               <div className="text-gray-500 truncate">instagram.com/p/ABC123/</div>
             </button>
             <button
@@ -244,7 +247,7 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
               }}
               className="text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm"
             >
-              <div className="font-medium">Threads Post</div>
+              <div className="font-medium">{t.threadsPost[language]}</div>
               <div className="text-gray-500 truncate">threads.net/@user/post/123</div>
             </button>
             <button
@@ -256,8 +259,8 @@ const LinkInput = ({ onLinkSubmit, onCancel, initialValue = '', isLoading = fals
               }}
               className="text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm"
             >
-              <div className="font-medium">Manual Entry</div>
-              <div className="text-gray-500">Type restaurant name</div>
+              <div className="font-medium">{t.manualEntry[language]}</div>
+              <div className="text-gray-500">{t.typeRestaurantName[language]}</div>
             </button>
           </div>
         </div>
