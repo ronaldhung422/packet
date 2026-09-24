@@ -19,12 +19,12 @@ const Home = () => {
   const recentPlaces = places.slice(0, 8)
   
   const filters = [
-    { id: 'all' as FilterType, emoji: '🍽️', label: '全部' },
-    { id: 'chinese' as FilterType, emoji: '🍜', label: '中餐' },
-    { id: 'cafe' as FilterType, emoji: '☕', label: '咖啡' },
-    { id: 'dessert' as FilterType, emoji: '🍰', label: '甜點' },
-    { id: 'japanese' as FilterType, emoji: '🍣', label: '日式' },
-    { id: 'western' as FilterType, emoji: '🍝', label: '西餐' },
+    { id: 'all' as FilterType, emoji: '🍽️', label: 'All' },
+    { id: 'chinese' as FilterType, emoji: '🍜', label: 'Chinese' },
+    { id: 'cafe' as FilterType, emoji: '☕', label: 'Cafe' },
+    { id: 'dessert' as FilterType, emoji: '🍰', label: 'Dessert' },
+    { id: 'japanese' as FilterType, emoji: '🍣', label: 'Japanese' },
+    { id: 'western' as FilterType, emoji: '🍝', label: 'Western' },
   ]
 
   const getPlacesForCollection = (collectionId: string) => {
@@ -49,7 +49,7 @@ const Home = () => {
       {recentPlaces.length > 0 && (
         <PlaceCarousel 
           places={recentPlaces}
-          title="最近 Saved"
+          title="Recently Saved"
         />
       )}
 
@@ -70,43 +70,43 @@ const Home = () => {
         ) : (
           <EmptyState 
             type="places" 
-            title="尚未有收藏夾"
-            description="建立你的第一個收藏夾開始整理餐廳！"
+            title="No collections yet"
+            description="Create your first collection to organize restaurants"
           />
         )}
       </div>
 
       {/* Quick stats */}
       <div className="bg-gray-50 rounded-xl p-6 mt-8">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">快速統計</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-3xl font-bold text-packet-purple">{stats.totalPlaces}</div>
-            <div className="text-gray-600">總地點數</div>
+            <div className="text-gray-600">Total Places</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-packet-pink">{stats.placesByPerson.ronald}</div>
-            <div className="text-gray-600">Ronald 發現</div>
+            <div className="text-gray-600">Ronald Found</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-packet-green">{stats.placesByPerson.kerry}</div>
-            <div className="text-gray-600">Kerry 發現</div>
+            <div className="text-gray-600">Kerry Found</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-yellow-600">{stats.placesByCategory['want-to-try']}</div>
-            <div className="text-gray-600">想去試試</div>
+            <div className="text-gray-600">Want to Try</div>
           </div>
         </div>
       </div>
 
       {/* FAB */}
-      <FAB onClick={() => setShowAddSheet(true)} label="新增餐廳" />
+      <FAB onClick={() => setShowAddSheet(true)} label="Add Place" />
 
       {/* Add Place Bottom Sheet */}
       <BottomSheet
         isOpen={showAddSheet}
         onClose={() => setShowAddSheet(false)}
-        title="新增餐廳"
+        title="Add Place"
       >
         <div className="space-y-3">
           <Link
@@ -116,8 +116,8 @@ const Home = () => {
           >
             <span className="text-2xl">📋</span>
             <div>
-              <div className="font-medium">貼上 IG/Threads Link</div>
-              <div className="text-sm text-gray-500">自動抓取餐廳資訊</div>
+              <div className="font-medium">Paste IG/Threads Link</div>
+              <div className="text-sm text-gray-500">Auto-fetch restaurant info</div>
             </div>
           </Link>
           
@@ -128,8 +128,8 @@ const Home = () => {
           >
             <span className="text-2xl">📷</span>
             <div>
-              <div className="font-medium">從 Instagram 匯入</div>
-              <div className="text-sm text-gray-500">選擇已儲存的貼文</div>
+              <div className="font-medium">Import from Instagram</div>
+              <div className="text-sm text-gray-500">Choose from saved posts</div>
             </div>
           </Link>
           
@@ -140,8 +140,8 @@ const Home = () => {
           >
             <span className="text-2xl">🧵</span>
             <div>
-              <div className="font-medium">從 Threads 匯入</div>
-              <div className="text-sm text-gray-500">連結 Threads 帳號</div>
+              <div className="font-medium">Import from Threads</div>
+              <div className="text-sm text-gray-500">Connect Threads account</div>
             </div>
           </Link>
           
@@ -152,8 +152,8 @@ const Home = () => {
           >
             <span className="text-2xl">✍️</span>
             <div>
-              <div className="font-medium">手動輸入</div>
-              <div className="text-sm text-gray-500">自己填寫餐廳資訊</div>
+              <div className="font-medium">Manual Entry</div>
+              <div className="text-sm text-gray-500">Fill in restaurant details</div>
             </div>
           </Link>
         </div>

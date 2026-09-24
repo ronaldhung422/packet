@@ -26,12 +26,12 @@ export default function CollectionDetail() {
   if (!collection) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">找不到收藏夾</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Collection not found</h1>
         <button
           onClick={() => navigate('/')}
           className="text-[var(--primary-purple)] hover:underline"
         >
-          返回首頁
+          Back to Home
         </button>
       </div>
     )
@@ -55,7 +55,7 @@ export default function CollectionDetail() {
   }
 
   const handleDelete = () => {
-    if (window.confirm(`確定要刪除「${collection.name}」收藏夾嗎？餐廳不會被刪除。`)) {
+    if (window.confirm(`Are you sure you want to delete "${collection.name}"? Places will not be deleted.`)) {
       deleteCollection(collection.id)
       navigate('/')
     }
@@ -123,13 +123,13 @@ export default function CollectionDetail() {
                   onClick={handleEdit}
                   className="menu-item"
                 >
-                  <Edit2 className="h-4 w-4" /> 編輯
+                  <Edit2 className="h-4 w-4" /> Edit
                 </button>
                 <button
                   onClick={handleDelete}
                   className="menu-item text-red-600"
                 >
-                  <Trash2 className="h-4 w-4" /> 刪除
+                  <Trash2 className="h-4 w-4" /> Delete
                 </button>
               </div>
             </>
@@ -172,15 +172,15 @@ export default function CollectionDetail() {
       ) : (
         <EmptyState
           type="places"
-          title="此收藏夾尚未有餐廳"
-          description="新增餐廳到這個收藏夾"
+          title="No places in this collection yet"
+          description="Add restaurants to this collection"
         />
       )}
 
       {/* Drag Drop Zones for other collections */}
       {draggedPlace && collections.filter(c => c.id !== collection.id).length > 0 && (
         <div className="fixed bottom-24 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          <p className="text-sm font-medium text-gray-700 mb-2">拖曳到其他收藏夾：</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">Drag to another collection:</p>
           <div className="flex gap-2 overflow-x-auto">
             {collections.filter(c => c.id !== collection.id).map(c => (
               <div
@@ -198,25 +198,25 @@ export default function CollectionDetail() {
       )}
 
       {/* FAB */}
-      <FAB onClick={() => setShowAddSheet(true)} label="新增餐廳" />
+      <FAB onClick={() => setShowAddSheet(true)} label="Add Place" />
 
       {/* Edit Collection Sheet */}
       <BottomSheet
         isOpen={showEditSheet}
         onClose={() => setShowEditSheet(false)}
-        title="編輯收藏夾"
+        title="Edit Collection"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              名稱
+              Name
             </label>
             <input
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               className="input w-full"
-              placeholder="收藏夾名稱"
+              placeholder="Collection name"
             />
           </div>
           
@@ -239,7 +239,7 @@ export default function CollectionDetail() {
             className="btn btn-primary w-full"
             disabled={!editName.trim() || !editEmoji.trim()}
           >
-            儲存
+            Save
           </button>
         </div>
       </BottomSheet>
@@ -251,7 +251,7 @@ export default function CollectionDetail() {
           setShowMoveSheet(false)
           setSelectedPlaceId(null)
         }}
-        title="移動到收藏夾"
+        title="Move to Collection"
       >
         <div className="space-y-2">
           {collections.filter(c => c.id !== collection.id).map(c => (
@@ -264,7 +264,7 @@ export default function CollectionDetail() {
               <div>
                 <div className="font-medium">{c.name}</div>
                 <div className="text-sm text-gray-500">
-                  {places.filter(p => p.collectionIds?.includes(c.id)).length} 個餐廳
+                  {places.filter(p => p.collectionIds?.includes(c.id)).length} places
                 </div>
               </div>
             </button>
@@ -276,7 +276,7 @@ export default function CollectionDetail() {
       <BottomSheet
         isOpen={showAddSheet}
         onClose={() => setShowAddSheet(false)}
-        title="新增餐廳到收藏夾"
+        title="Add Place to Collection"
       >
         <div className="space-y-3">
           <button
@@ -288,8 +288,8 @@ export default function CollectionDetail() {
           >
             <span className="text-2xl">📋</span>
             <div>
-              <div className="font-medium">貼上 IG/Threads Link</div>
-              <div className="text-sm text-gray-500">自動抓取餐廳資訊</div>
+              <div className="font-medium">Paste IG/Threads Link</div>
+              <div className="text-sm text-gray-500">Auto-fetch restaurant info</div>
             </div>
           </button>
           
@@ -302,8 +302,8 @@ export default function CollectionDetail() {
           >
             <span className="text-2xl">✍️</span>
             <div>
-              <div className="font-medium">手動輸入</div>
-              <div className="text-sm text-gray-500">自己填寫餐廳資訊</div>
+              <div className="font-medium">Manual Entry</div>
+              <div className="text-sm text-gray-500">Fill in restaurant details</div>
             </div>
           </button>
         </div>

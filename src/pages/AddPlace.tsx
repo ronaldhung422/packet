@@ -4,8 +4,6 @@ import { ArrowLeft, MapPin, Tag, User } from 'lucide-react'
 import LinkInput from '../components/LinkInput'
 import { useStore } from '../store/useStore'
 import { extractionService } from '../services/extraction.service'
-import { useLanguage } from '../contexts/LanguageContext'
-import { translations as t } from '../i18n'
 import { PlaceType } from '../types'
 import { BottomSheet } from '../components/BottomSheet'
 import toast from 'react-hot-toast'
@@ -14,7 +12,6 @@ const AddPlace = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { places, addPlace, updatePlace, collections } = useStore()
-  const { language } = useLanguage()
   const editingPlace = places.find(place => place.id === searchParams.get('edit'))
   
   const [isLoading, setIsLoading] = useState(false)
@@ -108,12 +105,12 @@ const AddPlace = () => {
     e.preventDefault()
     
     if (!placeDetails.name.trim()) {
-      toast.error(language === 'zh-TW' ? '請輸入餐廳名稱' : 'Please enter a restaurant name')
+      toast.error('Please enter a restaurant name')
       return
     }
 
     if (selectedCollections.length === 0) {
-      toast.error(language === 'zh-TW' ? '請選擇至少一個收藏夾' : 'Please select at least one collection')
+      toast.error('Please select at least one collection')
       return
     }
 
@@ -157,12 +154,12 @@ const AddPlace = () => {
         })
       }
 
-      toast.success(`${editingPlace ? (language === 'zh-TW' ? '已更新' : 'Updated') : (language === 'zh-TW' ? '已新增' : 'Added')} ${placeDetails.name}!`)
+      toast.success(`${editingPlace ? 'Updated' : 'Added'} ${placeDetails.name}!`)
       navigate('/')
       
     } catch (error) {
       console.error('Failed to add place:', error)
-      toast.error(language === 'zh-TW' ? '新增失敗' : 'Failed to add place')
+      toast.error('Failed to add place')
     } finally {
       setIsLoading(false)
     }
