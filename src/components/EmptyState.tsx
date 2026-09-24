@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import { UtensilsCrossed, MapPin, Heart, Users } from 'lucide-react'
-import { useLanguage } from '../contexts/LanguageContext'
-import { translations as t } from '../i18n'
 
 interface EmptyStateProps {
   type: 'places' | 'map' | 'memories' | 'pairing'
@@ -18,45 +16,60 @@ const EmptyState = ({
   actionLabel, 
   actionPath = '/add' 
 }: EmptyStateProps) => {
-  const { language } = useLanguage()
   
   const getConfig = () => {
     switch (type) {
       case 'places':
         return {
           icon: UtensilsCrossed,
-          defaultTitle: t.noPlacesYetEmpty[language],
-          defaultDescription: t.startByAdding[language],
-          defaultAction: t.emptyStateAddFirstPlace[language],
+          defaultTitle: 'No places yet',
+          defaultDescription: 'Start by adding your first restaurant',
+          defaultAction: 'Add First Place',
           color: 'text-packet-purple',
-          bgColor: 'bg-purple-50'
+          bgColor: 'bg-purple-50',
+          tips: [
+            { emoji: '📱', title: 'Copy from Instagram', desc: 'Tap share, copy link' },
+            { emoji: '🔗', title: 'Paste here', desc: 'App extracts info automatically' },
+            { emoji: '📝', title: 'Add manually', desc: 'Type name if extraction fails' }
+          ]
         }
       case 'map':
         return {
           icon: MapPin,
-          defaultTitle: t.noLocationsYet[language],
-          defaultDescription: t.addPlacesWithLocations[language],
-          defaultAction: t.addPlace[language],
+          defaultTitle: 'No locations yet',
+          defaultDescription: 'Add places with locations to see them on the map',
+          defaultAction: 'Add Place',
           color: 'text-packet-green',
-          bgColor: 'bg-green-50'
+          bgColor: 'bg-green-50',
+          tips: [
+            { emoji: '📍', title: 'Add locations', desc: 'Include addresses when saving' },
+            { emoji: '🗺️', title: 'View nearby', desc: 'Find places when you\'re out' },
+            { emoji: '📌', title: 'Save for later', desc: 'Plan your next adventure' }
+          ]
         }
       case 'memories':
         return {
           icon: Heart,
-          defaultTitle: t.noMemoriesYet[language],
-          defaultDescription: t.addMemoriesToPlaces[language],
-          defaultAction: t.browsePlaces[language],
+          defaultTitle: 'No memories yet',
+          defaultDescription: 'Start adding memories to your favorite places',
+          defaultAction: 'Browse Places',
           color: 'text-packet-pink',
-          bgColor: 'bg-pink-50'
+          bgColor: 'bg-pink-50',
+          tips: []
         }
       case 'pairing':
         return {
           icon: Users,
-          defaultTitle: t.notPairedYetEmpty[language],
-          defaultDescription: t.pairWithPartnerToShare[language],
-          defaultAction: t.pairNowAction[language],
+          defaultTitle: 'Not paired yet',
+          defaultDescription: 'Pair with your partner to share your food discoveries',
+          defaultAction: 'Pair Now',
           color: 'text-blue-600',
-          bgColor: 'bg-blue-50'
+          bgColor: 'bg-blue-50',
+          tips: [
+            { emoji: '👫', title: 'Shared collection', desc: 'Both see all saved places' },
+            { emoji: '🏆', title: 'Friendly competition', desc: 'See who finds more gems' },
+            { emoji: '💝', title: 'Food memories', desc: 'Build your shared food diary' }
+          ]
         }
     }
   }
@@ -88,61 +101,19 @@ const EmptyState = ({
       )}
 
       {/* Tips based on type */}
-      <div className="mt-10 pt-8 border-t border-gray-200">
-        <h4 className="text-sm font-medium text-gray-700 mb-4">{t.quickTips[language]}</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-          {type === 'places' && (
-            <>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📱 {t.copyFromInstagram[language]}</div>
-                <div>{t.tapShareCopyLink[language]}</div>
+      {config.tips.length > 0 && (
+        <div className="mt-10 pt-8 border-t border-gray-200">
+          <h4 className="text-sm font-medium text-gray-700 mb-4">Quick Tips</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+            {config.tips.map((tip, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium mb-1">{tip.emoji} {tip.title}</div>
+                <div>{tip.desc}</div>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🔗 {t.pasteHere[language]}</div>
-                <div>{t.appExtractsInfo[language]}</div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📝 {t.addManually[language]}</div>
-                <div>{t.typeNameIfFails[language]}</div>
-              </div>
-            </>
-          )}
-          
-          {type === 'map' && (
-            <>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📍 {t.addLocations[language]}</div>
-                <div>{t.includeAddresses[language]}</div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🗺️ {t.viewNearby[language]}</div>
-                <div>{t.findPlacesWhenOut[language]}</div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">📌 {t.saveForLater[language]}</div>
-                <div>{t.planNextAdventure[language]}</div>
-              </div>
-            </>
-          )}
-          
-          {type === 'pairing' && (
-            <>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">👫 {t.sharedCollection[language]}</div>
-                <div>{t.bothSeeAllPlaces[language]}</div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">🏆 {t.friendlyCompetition[language]}</div>
-                <div>{t.seeWhoFindsMore[language]}</div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium mb-1">💝 {t.foodMemoriesShared[language]}</div>
-                <div>{t.buildSharedDiary[language]}</div>
-              </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

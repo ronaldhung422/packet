@@ -90,13 +90,13 @@ BEGIN
   -- Insert default collections
   INSERT INTO packet_place_collections (collection_id, name, emoji, created_by, display_order)
   VALUES
-    (p_collection_id, '全部', '📁', p_user_id, 0),
-    (p_collection_id, '想去試試', '🤔', p_user_id, 1),
-    (p_collection_id, '去過了', '✅', p_user_id, 2),
-    (p_collection_id, '最愛', '⭐', p_user_id, 3),
-    (p_collection_id, '香港美食', '🇭🇰', p_user_id, 4),
-    (p_collection_id, '咖啡館', '☕', p_user_id, 5),
-    (p_collection_id, '甜品店', '🍰', p_user_id, 6);
+    (p_collection_id, 'All', '📁', p_user_id, 0),
+    (p_collection_id, 'Want to Try', '🤔', p_user_id, 1),
+    (p_collection_id, 'Been There', '✅', p_user_id, 2),
+    (p_collection_id, 'Favorites', '⭐', p_user_id, 3),
+    (p_collection_id, 'Hong Kong Food', '🇭🇰', p_user_id, 4),
+    (p_collection_id, 'Cafes', '☕', p_user_id, 5),
+    (p_collection_id, 'Desserts', '🍰', p_user_id, 6);
 END;
 $$;
 
